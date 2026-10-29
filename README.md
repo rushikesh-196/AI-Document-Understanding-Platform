@@ -120,57 +120,61 @@ flowchart TD
 
 ## 6. Project Structure
 
-`	ext
+## 6. Project Structure
+
+```text
 AI-Document-Understanding-Platform/
-|-- README.md                      # Placement-ready documentation (this file)
-|-- LICENSE                        # MIT License
-|-- .gitignore                     # Production Git ignore rules
-|-- .env.example                   # Sanitized environment template
-|-- requirements.txt               # Root Python dependencies
-|-- plan.md                        # Project roadmap & notes
-|
-|-- docs/                          # Comprehensive Technical Documentation
-|   |-- PROJECT_OVERVIEW.md        # Feature matrix, user roles, requirements
-|   |-- ARCHITECTURE.md            # Decoupled architecture, sequence, and flow diagrams
-|   |-- FOLDER_STRUCTURE.md        # Directory responsibilities guide
-|   |-- SETUP_AND_EXECUTION.md     # Installation and startup guide
-|   |-- API_DOCUMENTATION.md       # API endpoints, request & response schemas
-|   |-- DATABASE_SCHEMA.md         # Schema tables, columns, relations, migrations
-|   |-- SECURITY.md                # RBAC, password hashing, file upload security
-|   +-- TESTING.md                 # Test plan, suite commands, and verification
-|
-|-- routes/                        # Flask Controllers (OCR, Admin, Export, Dashboard)
-|-- services/                      # Flask Services (OCR, NLP, Intelligence, DB, Auth)
-|-- models/                        # ML Model classifiers & classification pipelines
-|-- utils/                         # Reusable helpers (image, file, progress, cache)
-|-- templates/                     # Flask Jinja2 UI Views (including templates/admin/)
-|-- static/                        # CSS stylesheets, JavaScript files, and sample documents
-|-- tests/                         # Pytest test suite (30 tests) and test runner
-|
-|-- backend/                       # Headless FastAPI Backend & AI Models
-|   |-- app/                       # FastAPI application package (API, models, schemas)
-|   |-- document_ai.db             # FastAPI SQLite development database
-|   |-- requirements.txt           # FastAPI Python dependencies
-|   +-- README.md                  # FastAPI documentation
-|
-|-- frontend/                      # React 18 + TypeScript + Vite Single-Page Application
-|   |-- src/                       # Components, pages, context, services, types
-|   |-- package.json               # Frontend dependencies & scripts
-|   |-- vite.config.ts             # Vite proxy (/api -> :8000)
-|   +-- README.md                  # Frontend documentation
-|
-|-- data/                          # Data directory (SQLite fallback, backups, data policy)
-|-- scripts/                       # Centralized Startup & Automation Scripts
-|   |-- start_server.ps1           # Production Flask platform launcher
-|   |-- start.bat                  # Windows batch launcher
-|   |-- start_fastapi.ps1          # FastAPI server launcher
-|   +-- setup.ps1                  # One-click environment bootstrap script
-|
-|-- START_SERVER.ps1               # Root launcher convenience forwarder
-|-- START.bat                      # Root batch convenience forwarder
-|-- uploads/                       # Document storage directory for user uploads
-+-- extracted/                     # Structured JSON extraction output directory
-`
+├── README.md                      # Placement-ready documentation
+├── LICENSE                        # MIT License
+├── .gitignore                     # Production Git ignore rules
+├── .env.example                   # Sanitized environment template
+├── requirements.txt               # Root Python dependencies
+├── plan.md                        # Project roadmap and notes
+│
+├── docs/                          # Technical documentation
+│   ├── PROJECT_OVERVIEW.md        # Features, roles, requirements
+│   ├── ARCHITECTURE.md            # Architecture and flow diagrams
+│   ├── FOLDER_STRUCTURE.md        # Directory responsibilities
+│   ├── SETUP_AND_EXECUTION.md     # Installation and startup guide
+│   ├── API_DOCUMENTATION.md       # API endpoints and schemas
+│   ├── DATABASE_SCHEMA.md         # Tables, columns, relationships
+│   ├── SECURITY.md                # RBAC and security practices
+│   └── TESTING.md                 # Test plan and verification
+│
+├── routes/                        # Flask controllers
+├── services/                      # OCR, NLP, database and auth services
+├── models/                        # ML models and classification pipelines
+├── utils/                         # Reusable utility functions
+├── templates/                     # Flask Jinja2 templates
+│   └── admin/                     # Admin interface templates
+├── static/                        # CSS, JavaScript and sample documents
+├── tests/                         # Pytest test suite
+│
+├── backend/                       # FastAPI backend and AI models
+│   ├── app/                       # API, models and schemas
+│   ├── document_ai.db             # SQLite development database
+│   ├── requirements.txt           # Backend dependencies
+│   └── README.md                  # Backend documentation
+│
+├── frontend/                      # React + TypeScript + Vite
+│   ├── src/                       # Components, pages and services
+│   ├── package.json               # Frontend dependencies and scripts
+│   ├── vite.config.ts              # Vite configuration and API proxy
+│   └── README.md                  # Frontend documentation
+│
+├── data/                          # SQLite fallback and backups
+├── scripts/                       # Startup and automation scripts
+│   ├── start_server.ps1           # Flask platform launcher
+│   ├── start.bat                  # Windows batch launcher
+│   ├── start_fastapi.ps1           # FastAPI launcher
+│   └── setup.ps1                  # Environment setup script
+│
+├── START_SERVER.ps1               # Root PowerShell launcher
+├── START.bat                      # Root batch launcher
+├── uploads/                       # Uploaded document storage
+└── extracted/                     # Structured extraction outputs
+```
+
 
 ---
 
