@@ -1,0 +1,150 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Activity Logs — Admin Control Center{% endblock %}
+{% block header_title %}Audit Trail &amp; Activity Logs{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1400px; margin: 0 auto;">
+
+    <!-- HEADER -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+        <div>
+            <h1 style="font-size: 1.5rem; margin-bottom: 4px;">Platform Audit Trail</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0;">Database audit events recorded during the last 7 days.</p>
+        </div>
+        <button type="button" class="btn btn-outline btn-md" onclick="window.location.reload()">
+            <i class="fa-solid fa-arrows-rotate"></i> Refresh Logs
+        </button>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="saas-card" style="padding: 16px 20px; margin-bottom: 24px;">
+        <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 250px; position: relative;">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                <input type="text" id="activitySearchInput" class="form-control" placeholder="Search by user, action, details, IP..." style="padding-left: 38px;" oninput="filterLogsClient()">
+            </div>
+
+            <form method="GET" action="{{ url_for('admin.activity_logs_page') }}" style="display: flex; gap: 10px; align-items: center;">
+                <div style="width: 220px;">
+                    <select name="action" class="form-control" onchange="this.form.submit()">
+                        <option value="ALL" {% if selected_action == 'ALL' %}selected{% endif %}>All Actions</option>
+                        <option value="User registered" {% if selected_action == 'User registered' %}selected{% endif %}>User registered</option>
+                        <option value="User logged in" {% if selected_action == 'User logged in' %}selected{% endif %}>User logged in</option>
+                        <option value="Admin logged in" {% if selected_action == 'Admin logged in' %}selected{% endif %}>Admin logged in</option>
+                        <option value="User uploaded document" {% if selected_action == 'User uploaded document' %}selected{% endif %}>User uploaded document</option>
+                        <option value="Document processing completed" {% if selected_action == 'Document processing completed' %}selected{% endif %}>Document processing completed</option>
+                        <option value="Document processing failed" {% if selected_action == 'Document processing failed' %}selected{% endif %}>Document processing failed</option>
+                        <option value="Admin created user" {% if selected_action == 'Admin created user' %}selected{% endif %}>Admin created user</option>
+                        <option value="Admin blocked user" {% if selected_action == 'Admin blocked user' %}selected{% endif %}>Admin blocked user</option>
+                        <option value="Admin activated user" {% if selected_action == 'Admin activated user' %}selected{% endif %}>Admin activated user</option>
+                        <option value="Admin deleted user" {% if selected_action == 'Admin deleted user' %}selected{% endif %}>Admin deleted user</option>
+                    </select>
+                </div>
+                {% if selected_action and selected_action != 'ALL' %}
+                <a href="{{ url_for('admin.activity_logs_page') }}" class="btn btn-outline btn-md">Reset</a>
+                {% endif %}
+            </form>
+
+            <button type="button" class="btn btn-outline btn-md" onclick="exportLogsToCSV()">
+                <i class="fa-solid fa-file-csv"></i> Export CSV
+            </button>
+        </div>
+    </div>
+
+    <!-- LOGS TABLE -->
+    <div class="saas-card" style="padding: 24px;">
+        <div class="table-responsive">
+            <table class="saas-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Initiator / User</th>
+                        <th>Action</th>
+                        <th>Details</th>
+                        <th>IP Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if logs %}
+                        {% for log in logs %}
+                        <tr>
+                            <td style="font-family: var(--font-code); font-size: 0.8rem; color: var(--text-muted); white-space: nowrap;">
+                                {{ log.created_at }}
+                            </td>
+                            <td>
+                                <strong style="color: var(--text-main); font-size: 0.88rem;">{{ log.user_name }}</strong>
+                                {% if log.user_email %}
+                                <div style="color: var(--text-muted); font-size: 0.75rem;">{{ log.user_email }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if 'failed' in log.action.lower() or 'blocked' in log.action.lower() %}
+                                    <span class="badge badge-danger">{{ log.action }}</span>
+                                {% elif 'completed' in log.action.lower() or 'registered' in log.action.lower() or 'activated' in log.action.lower() %}
+                                    <span class="badge badge-success">{{ log.action }}</span>
+                                {% elif 'admin' in log.action.lower() %}
+                                    <span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #8B5CF6;">{{ log.action }}</span>
+                                {% else %}
+                                    <span class="badge badge-primary">{{ log.action }}</span>
+                                {% endif %}
+                            </td>
+                            <td style="font-size: 0.85rem; color: var(--text-main);">
+                                {{ log.details or '-' }}
+                            </td>
+                            <td style="font-family: var(--font-code); font-size: 0.8rem; color: var(--text-muted);">
+                                {{ log.ip_address or 'Unavailable' }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                                <i class="fa-solid fa-list-check" style="font-size: 2.2rem; opacity: 0.4; margin-bottom: 8px; display: block;"></i>
+                                No activity logs recorded for the selected filter.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filterLogsClient() {
+        const query = (document.getElementById("activitySearchInput").value || "").toLowerCase().trim();
+        const rows = document.querySelectorAll(".saas-table tbody tr");
+
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = (!query || text.includes(query)) ? "" : "none";
+        });
+    }
+
+    function exportLogsToCSV() {
+        const rows = document.querySelectorAll(".saas-table tr");
+        let csv = [];
+        rows.forEach(row => {
+            if (row.style.display === "none") return;
+            const cols = row.querySelectorAll("th, td");
+            const rowData = [];
+            cols.forEach(col => {
+                let clean = col.innerText.replace(/"/g, '""').trim();
+                rowData.push(`"${clean}"`);
+            });
+            if (rowData.length > 0) csv.push(rowData.join(","));
+        });
+
+        const csvBlob = new Blob([csv.join("\n")], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(csvBlob);
+        link.setAttribute("download", `audit_activity_logs_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+{% endblock %}

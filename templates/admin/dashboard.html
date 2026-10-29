@@ -1,0 +1,233 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Admin Dashboard — AI Document Intelligence Platform{% endblock %}
+{% block header_title %}Platform overview{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-dashboard { max-width: 1500px; margin: 0 auto; }
+    .ad-heading, .ad-section-head, .ad-panel-head { display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; }
+    .ad-heading { margin-bottom:22px; }
+    .ad-heading h1 { margin:0 0 5px; font-size:clamp(1.45rem,2vw,1.9rem); }
+    .ad-heading p,.ad-muted { color:var(--text-muted); margin:0; font-size:.88rem; }
+    .ad-actions { display:flex; gap:9px; flex-wrap:wrap; }
+    .ad-kpis { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:14px; margin-bottom:18px; }
+    .ad-card { background:var(--card-bg); border:1px solid var(--card-border); border-radius:16px; box-shadow:0 6px 24px rgba(15,23,42,.04); }
+    .ad-kpi { min-height:120px; padding:18px; display:flex; gap:14px; align-items:center; }
+    .ad-kpi-icon { height:44px; width:44px; border-radius:13px; display:grid; place-items:center; font-size:1rem; background:var(--background-alt); color:var(--primary); flex:none; }
+    .ad-kpi-value { font-size:1.7rem; line-height:1.1; font-weight:750; color:var(--text-main); }
+    .ad-kpi-label { color:var(--text-muted); font-size:.8rem; margin-top:6px; }
+    .ad-health { display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:13px 16px; margin-bottom:22px; }
+    .ad-health-title { font-size:.82rem; font-weight:700; margin-right:auto; }
+    .ad-health-item { display:inline-flex; align-items:center; gap:7px; color:var(--text-muted); font-size:.78rem; }
+    .ad-dot { height:8px; width:8px; border-radius:50%; background:#94a3b8; }
+    .ad-dot.online { background:#16a34a; box-shadow:0 0 0 3px rgba(22,163,74,.12); }
+    .ad-dot.offline { background:#dc2626; box-shadow:0 0 0 3px rgba(220,38,38,.12); }
+    .ad-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-bottom:18px; }
+    .ad-panel { padding:19px; min-width:0; }
+    .ad-panel h2,.ad-panel h3 { margin:0; font-size:1rem; }
+    .ad-panel-head { margin-bottom:15px; }
+    .ad-chart { position:relative; height:245px; }
+    .ad-table-wrap { overflow:auto; }
+    .ad-table { width:100%; border-collapse:collapse; min-width:680px; }
+    .ad-table th { padding:10px 12px; text-align:left; font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); border-bottom:1px solid var(--card-border); white-space:nowrap; }
+    .ad-table td { padding:12px; border-bottom:1px solid var(--card-border); color:var(--text-main); font-size:.82rem; vertical-align:middle; }
+    .ad-table tr:last-child td { border-bottom:0; }
+    .ad-person { display:flex; align-items:center; gap:9px; min-width:175px; }
+    .ad-avatar { height:32px; width:32px; display:grid; place-items:center; border-radius:50%; background:rgba(99,102,241,.12); color:#6366f1; font-weight:700; flex:none; }
+    .ad-person small,.ad-sub { display:block; color:var(--text-muted); font-size:.74rem; margin-top:3px; }
+    .ad-toolbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
+    .ad-toolbar .form-control { min-width:135px; }
+    .ad-toolbar .ad-search { flex:1 1 220px; }
+    .ad-empty { padding:30px 12px; text-align:center; color:var(--text-muted); font-size:.84rem; }
+    .ad-status { display:inline-flex; align-items:center; gap:6px; font-size:.75rem; font-weight:650; }
+    .ad-status::before { content:''; width:7px; height:7px; border-radius:50%; background:#94a3b8; }
+    .ad-status.completed::before,.ad-status.active::before { background:#16a34a; }
+    .ad-status.failed,.ad-status.blocked { color:#dc2626; }
+    .ad-status.failed::before,.ad-status.blocked::before { background:#dc2626; }
+    .ad-status.processing::before,.ad-status.pending::before { background:#d97706; }
+    .ad-feed { display:grid; gap:9px; max-height:410px; overflow:auto; }
+    .ad-feed-item { padding:12px 13px; background:var(--background-alt); border-radius:11px; border-left:3px solid var(--primary); }
+    .ad-feed-item strong { font-size:.82rem; }
+    .ad-feed-item p { margin:5px 0; color:var(--text-muted); font-size:.78rem; overflow-wrap:anywhere; }
+    .ad-feed-item small { color:var(--text-muted); font-size:.7rem; }
+    .ad-sync { color:var(--text-muted); font-size:.74rem; align-self:center; }
+    .ad-chart-empty { position:absolute; inset:0; display:grid; place-items:center; color:var(--text-muted); font-size:.82rem; pointer-events:none; }
+    @media(max-width:1100px){ .ad-kpis{grid-template-columns:repeat(3,minmax(0,1fr));} }
+    @media(max-width:780px){ .ad-grid{grid-template-columns:1fr;} .admin-content{padding:22px 16px;} }
+    @media(max-width:560px){ .ad-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;} .ad-kpi{padding:13px;min-height:100px;gap:10px;} .ad-kpi-icon{height:37px;width:37px;} .ad-kpi-value{font-size:1.35rem;} .ad-health-title{width:100%;} }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="admin-dashboard" id="adminDashboard">
+    <header class="ad-heading">
+        <div>
+            <h1>Welcome, {{ admin.name }}</h1>
+            <p>Live platform activity and document processing from MySQL.</p>
+        </div>
+        <div class="ad-actions">
+            <span class="ad-sync" id="lastSyncLabel">Connecting to MySQL…</span>
+            <button type="button" class="btn btn-outline btn-sm" id="refreshDashboardBtn"><i class="fa-solid fa-arrows-rotate" id="refreshDashboardIcon"></i> Refresh</button>
+            <a href="{{ url_for('admin.users_page') }}" class="btn btn-outline btn-sm"><i class="fa-solid fa-users"></i> Users</a>
+            <a href="{{ url_for('admin.documents_page') }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-folder-open"></i> Documents</a>
+        </div>
+    </header>
+
+    <section class="ad-kpis" aria-label="Database overview">
+        {% for key, label, icon in [('total_users','Total users','fa-users'),('total_documents','Total documents','fa-file-lines'),('processed_documents','Processed','fa-circle-check'),('failed_documents','Failed','fa-circle-exclamation'),('pending_documents','Pending','fa-hourglass-half')] %}
+        <article class="ad-card ad-kpi"><div class="ad-kpi-icon"><i class="fa-solid {{ icon }}"></i></div><div><div class="ad-kpi-value" data-stat="{{ key }}">—</div><div class="ad-kpi-label">{{ label }}</div></div></article>
+        {% endfor %}
+    </section>
+
+    <section class="ad-card ad-health" aria-label="System status">
+        <strong class="ad-health-title">System status</strong>
+        <span class="ad-health-item"><i class="ad-dot" data-health="database"></i> MySQL <b data-health-label="database">Checking</b></span>
+        <span class="ad-health-item"><i class="ad-dot" data-health="api"></i> Dashboard API <b data-health-label="api">Checking</b></span>
+        <span class="ad-health-item"><i class="ad-dot" data-health="ocr"></i> OCR support <b data-health-label="ocr">Checking</b></span>
+    </section>
+
+    <section class="ad-grid" aria-label="Analytics">
+        <article class="ad-card ad-panel"><div class="ad-panel-head"><div><h2>Document uploads</h2><p class="ad-muted">Daily totals · last 7 days</p></div></div><div class="ad-chart"><canvas id="uploadsChart"></canvas><div class="ad-chart-empty" id="uploadsEmpty" hidden>No upload data for this period.</div></div></article>
+        <article class="ad-card ad-panel"><div class="ad-panel-head"><div><h2>Processing status</h2><p class="ad-muted">Current document jobs</p></div></div><div class="ad-chart"><canvas id="statusChart"></canvas><div class="ad-chart-empty" id="statusEmpty" hidden>No processing data recorded.</div></div></article>
+        <article class="ad-card ad-panel"><div class="ad-panel-head"><div><h2>User registrations</h2><p class="ad-muted">Daily totals · last 7 days</p></div></div><div class="ad-chart"><canvas id="usersChart"></canvas><div class="ad-chart-empty" id="usersEmpty" hidden>No registrations for this period.</div></div></article>
+        <article class="ad-card ad-panel"><div class="ad-panel-head"><div><h2>Document types</h2><p class="ad-muted">Classification counts from processed records</p></div></div><div class="ad-chart"><canvas id="typesChart"></canvas><div class="ad-chart-empty" id="typesEmpty" hidden>No document types recorded.</div></div></article>
+    </section>
+
+    <section class="ad-grid">
+        <article class="ad-card ad-panel">
+            <div class="ad-panel-head"><div><h2>User management</h2><p class="ad-muted">Registration, account status, uploads and last activity</p></div><a class="btn btn-outline btn-sm" href="{{ url_for('admin.users_page') }}">Manage all</a></div>
+            <div class="ad-toolbar"><input id="userSearch" class="form-control ad-search" type="search" placeholder="Search user name or email"><select id="userStatus" class="form-control"><option value="ALL">All statuses</option><option value="active">Active</option><option value="blocked">Blocked</option></select></div>
+            <div class="ad-table-wrap"><table class="ad-table"><thead><tr><th>User</th><th>Status</th><th>Documents</th><th>Registered</th><th>Last activity</th></tr></thead><tbody id="usersRows"><tr><td colspan="5" class="ad-empty">Loading MySQL users…</td></tr></tbody></table></div>
+        </article>
+        <article class="ad-card ad-panel">
+            <div class="ad-panel-head"><div><h2>Recent activity</h2><p class="ad-muted">Registrations, uploads and processing events</p></div><a class="btn btn-outline btn-sm" href="{{ url_for('admin.activity_logs_page') }}">Activity log</a></div>
+            <div class="ad-feed" id="activityFeed"><div class="ad-empty">Loading activity…</div></div>
+        </article>
+    </section>
+
+    <section class="ad-card ad-panel">
+        <div class="ad-panel-head"><div><h2>Document management</h2><p class="ad-muted">Live upload status, owner, OCR and extraction results</p></div><a class="btn btn-outline btn-sm" href="{{ url_for('admin.documents_page') }}">Open repository</a></div>
+        <div class="ad-toolbar">
+            <input id="documentSearch" class="form-control ad-search" type="search" placeholder="Search file, job ID or owner">
+            <input id="dateFrom" class="form-control" type="date" aria-label="Uploaded from">
+            <input id="dateTo" class="form-control" type="date" aria-label="Uploaded through">
+            <select id="documentStatus" class="form-control"><option value="ALL">All statuses</option></select>
+            <select id="documentType" class="form-control"><option value="ALL">All document types</option></select>
+            <button type="button" class="btn btn-outline btn-sm" id="clearDocumentFilters">Clear</button>
+        </div>
+        <div class="ad-table-wrap"><table class="ad-table"><thead><tr><th>Document</th><th>Owner</th><th>Type</th><th>OCR</th><th>Extraction</th><th>Confidence</th><th>Status</th><th>Uploaded</th><th></th></tr></thead><tbody id="documentsRows"><tr><td colspan="9" class="ad-empty">Loading MySQL documents…</td></tr></tbody></table></div>
+    </section>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(() => {
+    const byId = (id) => document.getElementById(id);
+    const charts = {};
+    let snapshot = null;
+    let userRows = [];
+    const number = (value) => Number(value || 0).toLocaleString();
+    const text = (value, fallback = '—') => value === null || value === undefined || value === '' ? fallback : String(value);
+    const esc = (value) => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    function setChart(id, emptyId, type, labels, values, color, label) {
+        if (charts[id]) charts[id].destroy();
+        const hasValues = values.some(v => Number(v) > 0);
+        byId(emptyId).hidden = hasValues;
+        if (!window.Chart) { byId(emptyId).hidden = false; byId(emptyId).textContent = 'Charts are unavailable.'; return; }
+        charts[id] = new Chart(byId(id), {type, data:{labels,datasets:[{label,data:values,
+            backgroundColor:type === 'doughnut' ? ['#4f46e5','#10b981','#f59e0b','#ef4444','#06b6d4','#8b5cf6','#94a3b8'] : color,
+            borderColor:color,borderWidth:type === 'line' ? 2 : 0,borderRadius:type === 'bar' ? 5 : 0,
+            fill:type === 'line',tension:.35,pointRadius:type === 'line' ? 2 : 0}]},
+            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:type==='doughnut',position:'bottom'}},
+                scales:type==='doughnut'?{}:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{precision:0},grid:{color:'rgba(148,163,184,.15)'}}}}});
+    }
+    function renderCharts(data) {
+        const a = data.analytics || {};
+        const volume = a.upload_timeline || [], regs = a.registration_timeline || [];
+        const status = a.status_distribution || {}, types = a.type_distribution || {};
+        const shortDate = d => d.date ? d.date.slice(5) : '';
+        setChart('uploadsChart','uploadsEmpty','line',volume.map(shortDate),volume.map(x=>x.count||0),'#4f46e5','Uploads');
+        setChart('statusChart','statusEmpty','doughnut',Object.keys(status),Object.values(status),'#4f46e5','Documents');
+        setChart('usersChart','usersEmpty','bar',regs.map(shortDate),regs.map(x=>x.count||0),'#06b6d4','Registrations');
+        const sortedTypes = Object.entries(types).sort((a,b)=>b[1]-a[1]).slice(0,10);
+        setChart('typesChart','typesEmpty','bar',sortedTypes.map(x=>x[0]),sortedTypes.map(x=>x[1]),'#8b5cf6','Documents');
+    }
+    function renderHealth(health={}) {
+        for (const key of ['database','api','ocr']) {
+            const value = health[key] || 'unavailable';
+            document.querySelector(`[data-health-label="${key}"]`)?.replaceChildren(document.createTextNode(value === 'online' ? 'Online' : value === 'configured' ? 'Configured' : 'Unavailable'));
+            const dot = document.querySelector(`[data-health="${key}"]`);
+            if (dot) dot.className = `ad-dot ${['online','configured'].includes(value) ? 'online' : 'offline'}`;
+        }
+        byId('lastSyncLabel').textContent = health.last_sync ? `Synced ${new Date(health.last_sync).toLocaleTimeString()}` : 'Sync time unavailable';
+    }
+    function renderUsers(rows=userRows) {
+        const query = byId('userSearch').value.trim().toLowerCase(), status = byId('userStatus').value;
+        const filtered = (rows||[]).filter(u => (!query || `${u.name||''} ${u.email||''}`.toLowerCase().includes(query)) && (status==='ALL'||u.status===status));
+        byId('usersRows').innerHTML = filtered.length ? filtered.slice(0,8).map(u => `<tr>
+            <td><div class="ad-person"><span class="ad-avatar">${esc((u.name||'U').slice(0,1).toUpperCase())}</span><span><strong>${esc(u.name||'Unknown')}</strong><small>${esc(u.email||'')}</small></span></div></td>
+            <td><span class="ad-status ${esc(u.status||'')}">${esc(u.status||'Unknown')}</span></td><td>${number(u.document_count)}</td>
+            <td>${esc(text(u.created_at))}</td><td>${esc(text(u.last_activity,'No activity recorded'))}</td></tr>`).join('') : '<tr><td colspan="5" class="ad-empty">No matching users in the database.</td></tr>';
+    }
+    async function loadUsers() {
+        const params = new URLSearchParams({q:byId('userSearch').value.trim()});
+        try {
+            const res=await fetch(`/api/admin/users?${params}`,{cache:'no-store'}), data=await res.json();
+            if(!res.ok||!data.success) throw new Error(data.message||'Unable to load users.');
+            userRows=data.users||[]; renderUsers(userRows);
+        } catch(e) { byId('usersRows').innerHTML=`<tr><td colspan="5" class="ad-empty">${esc(e.message)}</td></tr>`; }
+    }
+    function renderActivity(rows) {
+        byId('activityFeed').innerHTML = rows?.length ? rows.map(a => `<article class="ad-feed-item"><div class="ad-panel-head"><strong>${esc(a.action||'Activity')}</strong><small>${esc(text(a.created_at))}</small></div><p>${esc(a.details||'')}</p><small>${esc(a.actor_name||'System')}${a.actor_email ? ` · ${esc(a.actor_email)}` : ''}</small></article>`).join('') : '<div class="ad-empty">No activity has been recorded.</div>';
+    }
+    function renderDocuments(rows) {
+        byId('documentsRows').innerHTML = rows?.length ? rows.map(d => `<tr>
+            <td><strong>${esc(d.filename||'Unnamed document')}</strong><small class="ad-sub">${esc(d.job_id)}</small></td>
+            <td>${esc(d.user_name||'Unknown owner')}<small class="ad-sub">${esc(d.user_email||'')}</small></td>
+            <td>${esc(d.document_type||'Unclassified')}</td><td>${esc(d.ocr_status||'Not recorded')}</td>
+            <td>${esc(d.extraction_status||'Not recorded')}</td><td>${esc(text(d.confidence_score))}</td>
+            <td><span class="ad-status ${esc(String(d.status||'').toLowerCase())}">${esc(d.status||'Unknown')}</span></td>
+            <td>${esc(text(d.created_at))}</td><td><a class="btn btn-outline btn-sm" href="/admin/documents?q=${encodeURIComponent(d.job_id)}">Details</a></td></tr>`).join('') : '<tr><td colspan="9" class="ad-empty">No documents match these filters.</td></tr>';
+    }
+    function setOptions(id, values, label) {
+        const select=byId(id), selected=select.value;
+        select.innerHTML=`<option value="ALL">All ${label}</option>`+(values||[]).map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+        if ((values||[]).includes(selected)) select.value=selected;
+    }
+    async function loadDocuments() {
+        const params = new URLSearchParams({limit:'8',q:byId('documentSearch').value.trim(),status:byId('documentStatus').value,type:byId('documentType').value,date_from:byId('dateFrom').value,date_to:byId('dateTo').value});
+        try { const res=await fetch(`/api/admin/documents?${params}`,{cache:'no-store'}); const payload=await res.json(); if(!res.ok||!payload.success) throw new Error(payload.message||'Unable to load documents'); renderDocuments(payload.documents||[]); }
+        catch(e) { byId('documentsRows').innerHTML=`<tr><td colspan="9" class="ad-empty">${esc(e.message)}</td></tr>`; }
+    }
+    async function refreshDashboard(showNotice=false) {
+        const icon=byId('refreshDashboardIcon'); icon.classList.add('fa-spin'); byId('refreshDashboardBtn').disabled=true;
+        try {
+            const res=await fetch('/api/admin/dashboard-data',{cache:'no-store'}), data=await res.json();
+            if(!res.ok||!data.success) throw new Error(data.message||'Unable to load live dashboard data.');
+            snapshot=data;
+            document.querySelectorAll('[data-stat]').forEach(el=>el.textContent=number(data.stats?.[el.dataset.stat]));
+            renderHealth(data.system_status); renderCharts(data); renderActivity(data.recent_activity); await loadUsers();
+            setOptions('documentStatus',data.filters?.statuses,'statuses'); setOptions('documentType',data.filters?.document_types,'document types');
+            await loadDocuments();
+            if(showNotice&&typeof showToast==='function') showToast('Dashboard refreshed from MySQL.','success');
+        } catch(e) {
+            byId('lastSyncLabel').textContent='Live MySQL data unavailable';
+            if(snapshot) renderHealth({...snapshot.system_status,database:'offline'});
+            if(typeof showToast==='function') showToast(e.message,'error');
+        } finally { icon.classList.remove('fa-spin'); byId('refreshDashboardBtn').disabled=false; }
+    }
+    let searchTimer;
+    byId('refreshDashboardBtn').addEventListener('click',()=>refreshDashboard(true));
+    byId('userSearch').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(loadUsers,250);});
+    byId('userStatus').addEventListener('change',()=>renderUsers(userRows));
+    ['documentSearch','dateFrom','dateTo','documentStatus','documentType'].forEach(id=>byId(id).addEventListener(id==='documentSearch'?'input':'change',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(loadDocuments,id==='documentSearch'?250:0);}));
+    byId('clearDocumentFilters').addEventListener('click',()=>{['documentSearch','dateFrom','dateTo'].forEach(id=>byId(id).value='');byId('documentStatus').value='ALL';byId('documentType').value='ALL';loadDocuments();});
+    document.addEventListener('DOMContentLoaded',()=>refreshDashboard());
+    setInterval(()=>refreshDashboard(),30000);
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,114 @@
+# ==============================================================================
+# AI Document Understanding Platform - Production Git Ignore Configuration
+# ==============================================================================
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+env/
+ENV/
+.venv/
+env.bak/
+venv.bak/
+
+# Testing & Quality Assurance
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+
+# Databases & Backups (Preserve structure via .gitkeep)
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/.backup/
+backend/*.db
+*.sqlite
+*.sqlite3
+
+# Runtime Uploads & Extracted Artifacts (Preserve folders via .gitkeep)
+uploads/*
+!uploads/.gitkeep
+extracted/*
+!extracted/.gitkeep
+outputs/*
+!outputs/.gitkeep
+backend/uploads/*
+backend/exports/*
+backend/models_cache/*
+
+# Frontend Artifacts & Dependencies
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# Operating System Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Temporary Files
+*.tmp
+*.bak
+temp/
+tmp/
+
+.env
+.env.*
+!.env.example

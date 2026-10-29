@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+
+{% block title %}About — AI Document Intelligence Platform{% endblock %}
+
+{% block content %}
+<section class="dashboard-section">
+    <div class="container" style="max-width: 1040px;">
+
+        <!-- HERO SECTION -->
+        <div class="about-hero reveal">
+            <div class="hero-badge">
+                <i class="fa-solid fa-brain"></i> Enterprise Cognitive Document Intelligence
+            </div>
+            <h1>About the <span class="gradient-text">Platform</span></h1>
+            <p>
+                A high-performance, layout-aware AI document understanding platform engineered to convert complex physical scans, PDFs, receipts, invoices, and medical reports into verified, machine-readable data structures with millimeter-grade layout preservation and enterprise governance.
+            </p>
+        </div>
+
+        <!-- MISSION & PHILOSOPHY (2 COLUMNS) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 36px;">
+            <div class="saas-card reveal">
+                <div class="feature-icon-box" style="margin-bottom: 16px;">
+                    <i class="fa-solid fa-bullseye"></i>
+                </div>
+                <h3 style="font-size: 1.25rem; margin-bottom: 10px;">Our Core Mission</h3>
+                <p style="line-height: 1.7; color: var(--text-muted); margin: 0;">
+                    Modern enterprises waste thousands of hours manually transcribing paper receipts, medical bills, and invoices. Our mission is to bridge the gap between unstructured physical documentation and downstream business workflows by delivering automated, multi-engine OCR extraction with semantic intelligence, tabular extraction, and instant verification.
+                </p>
+            </div>
+
+            <div class="saas-card reveal">
+                <div class="feature-icon-box" style="margin-bottom: 16px; color: var(--accent); background: rgba(6,182,212,0.1);">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h3 style="font-size: 1.25rem; margin-bottom: 10px;">Privacy &amp; Governance First</h3>
+                <p style="line-height: 1.7; color: var(--text-muted); margin: 0;">
+                    Unlike public cloud APIs that expose sensitive proprietary documents to external data-scraping pipelines, our platform prioritizes local and on-premise execution models. Every document is processed within strict user-isolated boundaries, backed by encrypted session authentication, role-based controls, and immutable database audit logs.
+                </p>
+            </div>
+        </div>
+
+        <!-- END-TO-END PROCESSING PIPELINE ARCHITECTURE -->
+        <div class="saas-card reveal" style="padding: 32px; margin-bottom: 36px;">
+            <div class="about-section-header">
+                <h2><i class="fa-solid fa-diagram-project" style="color: var(--primary);"></i> 7-Stage Cognitive Processing Pipeline</h2>
+                <p>Every uploaded document flows through a deterministic, single-pass pipeline combining computer vision, deep learning OCR, and natural language processing.</p>
+            </div>
+
+            <div class="pipeline-timeline">
+                <!-- Stage 1 -->
+                <div class="pipeline-step-card">
+                    <div class="step-badge">01</div>
+                    <div class="step-content">
+                        <div class="step-header">
+                            <h4 class="step-title">Ingestion, Validation &amp; DPI Normalization</h4>
+                            <span class="badge badge-primary">Stage 1</span>
+                        </div>
+                        <p class="step-desc">
+                            Incoming files (PDF, PNG, JPG, TIFF, BMP, WebP) are sanitized, checked against size limits (up to 16MB), and passed to the image processing engine. Multi-page PDFs are rendered into high-definition rasterized surfaces with contrast normalization and deskewing.
+                        </p>
+                        <div class="step-tags">
+                            <span class="step-tag"><i class="fa-solid fa-file-shield"></i> File Sanitization</span>
+                            <span class="step-tag"><i class="fa-solid fa-expand"></i> 150–300 DPI Rendering</span>
+                            <span class="step-tag"><i class="fa-solid fa-layer-group"></i> Multi-Page Splitting</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stage 2 -->
+                <div class="pipeline-step-card">
+                    <div class="step-badge" style="color: var(--accent); background: rgba(6,182,212,0.1);">02</div>
+                    <div class="step-content">
+                        <div class="step-header">
+                            <h4 class="step-title">Dual-Engine OCR &amp; Text Coordinate Mapping</h4>
+                            <span class="badge badge-primary">Stage 2</span>
+                        </div>
+                        <p class="step-desc">
+                            Utilizes PyMuPDF direct text-layer extraction for digital PDFs, paired with PaddleOCR deep learning models for scanned imagery. Every word is mapped to its exact bounding box coordinates <code>[x_min, y_min, x_max, y_max]</code> alongside granular word-level confidence ratings.
+                        </p>
+                        <div class="step-tags">
+                            <span class="step-tag"><i class="fa-solid fa-eye"></i> PaddleOCR Deep Learning</span>
+                            <span class="step-tag"><i class="fa-solid fa-bolt"></i> PyMuPDF Native Stream</span>
+                            <span class="step-tag"><i class="fa-solid fa-vector-square"></i> Bounding Box Geometry</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stage 3 -->
+                <div class="pipeline-step-card">
+                    <div class="step-badge" style="color: var(--success); background: var(--success-bg);">03</div>
+                    <div class="step-content">
+                        <div class="step-header">
+                            <h4 class="step-title">Automated Taxonomy &amp; Document Classification</h4>
+                            <span class="badge badge-primary">Stage 3</span>
+                        </div>
+                        <p class="step-desc">
+                            A multi-layered heuristic classification engine analyzes textual cues, structural layouts, and header tokens to categorize documents automatically into Invoices, Receipts, Medical Reports, Resumes/CVs, Purchase Orders, Certificates, or ID Documents.
+                        </p>
+                        <div class="step-tags">
+                            <span class="step-tag"><i class="fa-solid fa-tags"></i> Document Categorization</span>
+                            <span class="step-tag"><i class="fa-solid fa-weight-scale"></i> Keyword Weighting</span>
+                            <span class="step-tag"><i class="fa-solid fa-brain"></i> Contextual Heuristics</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stage 4 -->
+                <div class="pipeline-step-card">
+                    <div class="step-badge" style="color: var(--warning); background: var(--warning-bg);">04</div>
+                    <div class="step-content">
+                        <div class="step-header">
+                            <h4 class="step-title">Spatial Layout Reconstruction Engine</h4>
+                            <span class="badge badge-primary">Stage 4</span>
+                        </div>
+                        <p class="step-desc">
+                            Instead of dumping unstructured raw text, our layout reconstruction engine clusters text blocks by vertical and horizontal baselines, rebuilding the original visual document into an interactive, zoomable, printable HTML paper sheet.
+                        </p>
+                        <div class="step-tags">
+                            <span class="step-tag"><i class="fa-solid fa-file-invoice"></i> HTML Paper Sheet</span>
+                            <span class="step-tag"><i class="fa-solid fa-columns"></i> Multi-Column Alignment</span>
+                            <span class="step-tag"><i class="fa-solid fa-magnifying-glass-plus"></i> Interactive Zoom</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stage 5 -->
+                <div class="pipeline-step-card">
+                    <div class="step-badge" style="color: #8B5CF6; background: rgba(139,92,246,0.1);">05</div>
+                    <div class="step-content">
+                        <div class="step-header">
+                            <h4 class="step-title">NLP Entity Extraction &amp; Key-Value Mining</h4>
+                            <span class="badge badge-primary">Stage 5</span>
+                        </div>
+                        <p class="step-desc">
+                            A custom spaCy pipeline coupled with regex pattern extractors identifies critical business entities: dates, totals, currencies, tax identifiers (GST/PAN), vendor/patient names, transaction IDs, addresses, and phone numbers.
+                        </p>
+                        <div class="step-tags">
+                            <span class="step-tag"><i class="fa-solid fa-robot"></i> spaCy Named Entity Recognition</span>
+                            <span class="step-tag"><i class="fa-solid fa-key"></i> Key-Value Association</span>
+                            <span class="step-tag"><i class="fa-solid fa-hashtag"></i> Tax &amp; Currency Parsers</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stage 6 -->
+                <div class="pipeline-step-card">
+                    <div class="step-badge" style="color: #EC4899; background: rgba(236,72,153,0.1);">06</div>
+                    <div class="step-content">
+                        <div class="step-header">
+                            <h4 class="step-title">Table Matrix Detection &amp; Itemization</h4>
+                            <span class="badge badge-primary">Stage 6</span>
+                        </div>
+                        <p class="step-desc">
+                            Scans document line streams for tabular grids, aligning column headers with itemized descriptions, quantities, unit prices, and row totals. Outputs cleanly to interactive web tables and downloadable CSV format.
+                        </p>
+                        <div class="step-tags">
+                            <span class="step-tag"><i class="fa-solid fa-table-cells"></i> Matrix Grid Parsing</span>
+                            <span class="step-tag"><i class="fa-solid fa-list-ol"></i> Itemized Line Items</span>
+                            <span class="step-tag"><i class="fa-solid fa-file-csv"></i> CSV Export Engine</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stage 7 -->
+                <div class="pipeline-step-card">
+                    <div class="step-badge" style="color: var(--success); background: var(--success-bg);">07</div>
+                    <div class="step-content">
+                        <div class="step-header">
+                            <h4 class="step-title">Clean Structured JSON &amp; AI Executive Summary</h4>
+                            <span class="badge badge-primary">Stage 7</span>
+                        </div>
+                        <p class="step-desc">
+                            Synthesizes extracted data into a domain-grouped, clean JSON payload stripped of UI icons or metadata—ready for ERP, CRM, and accounting APIs. Generates an executive summary synthesizing key findings and total financial obligations.
+                        </p>
+                        <div class="step-tags">
+                            <span class="step-tag"><i class="fa-solid fa-code"></i> Domain-Grouped JSON</span>
+                            <span class="step-tag"><i class="fa-solid fa-sparkles"></i> AI Summary Synthesis</span>
+                            <span class="step-tag"><i class="fa-solid fa-server"></i> API Ready Payloads</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6 CORE PLATFORM CAPABILITIES -->
+        <div style="margin-bottom: 36px;">
+            <div class="about-section-header reveal">
+                <h2><i class="fa-solid fa-cubes-stacked" style="color: var(--accent);"></i> Key Platform Capabilities</h2>
+                <p>Enterprise features built for high-throughput, mission-critical document processing workflows.</p>
+            </div>
+
+            <div class="capabilities-grid stagger-children reveal">
+                <!-- 1 -->
+                <div class="capability-card">
+                    <div class="feature-icon-box">
+                        <i class="fa-solid fa-microchip"></i>
+                    </div>
+                    <h3>Multi-Engine OCR Precision</h3>
+                    <p>
+                        Combines deep learning PaddleOCR with PyMuPDF native digital stream parsing. Delivers word-level confidence metrics, character bounding boxes, and automatic rotation compensation.
+                    </p>
+                </div>
+
+                <!-- 2 -->
+                <div class="capability-card">
+                    <div class="feature-icon-box" style="color: var(--accent); background: rgba(6,182,212,0.1);">
+                        <i class="fa-solid fa-file-invoice"></i>
+                    </div>
+                    <h3>Layout-Aware Formatted View</h3>
+                    <p>
+                        Preserves original paper layout geometry. Renders extracted text as high-fidelity paper sheets with interactive toolbar controls: Fit Page, Fit Width, Zoom -/+, 100%, and direct PDF export.
+                    </p>
+                </div>
+
+                <!-- 3 -->
+                <div class="capability-card">
+                    <div class="feature-icon-box" style="color: var(--success); background: var(--success-bg);">
+                        <i class="fa-solid fa-code"></i>
+                    </div>
+                    <h3>Clean Domain Structured JSON</h3>
+                    <p>
+                        Converts chaotic paperwork into clean, domain-grouped JSON schemas (<code>document</code>, <code>vendor</code>, <code>patient</code>, <code>items</code>, <code>totals</code>) without UI noise or formatting metadata.
+                    </p>
+                </div>
+
+                <!-- 4 -->
+                <div class="capability-card">
+                    <div class="feature-icon-box" style="color: var(--warning); background: var(--warning-bg);">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </div>
+                    <h3>Real Database Analytics</h3>
+                    <p>
+                        The analytics dashboard is powered strictly by real SQL queries against the document database. Provides genuine upload activity timelines, classification distributions, and confidence tracking.
+                    </p>
+                </div>
+
+                <!-- 5 -->
+                <div class="capability-card">
+                    <div class="feature-icon-box" style="color: #8B5CF6; background: rgba(139,92,246,0.1);">
+                        <i class="fa-solid fa-expand"></i>
+                    </div>
+                    <h3>Unified Full View Modal</h3>
+                    <p>
+                        Inspect Raw Extractor text, AI Summary, Extracted Tables, Formatted View, Structured JSON, and Document Preview in a dedicated fullscreen modal with sticky controls and keyboard shortcuts.
+                    </p>
+                </div>
+
+                <!-- 6 -->
+                <div class="capability-card">
+                    <div class="feature-icon-box" style="color: var(--danger); background: var(--danger-bg);">
+                        <i class="fa-solid fa-user-lock"></i>
+                    </div>
+                    <h3>Role-Based Security &amp; Auditing</h3>
+                    <p>
+                        Complete authentication system with user isolation, bcrypt password hashing, admin portals, and persistent audit logging for every document processed, error encountered, and action taken.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SUPPORTED DOCUMENT DOMAINS -->
+        <div class="saas-card reveal" style="padding: 32px; margin-bottom: 36px;">
+            <div class="about-section-header">
+                <h2><i class="fa-solid fa-folder-tree" style="color: var(--primary);"></i> Supported Document Domains</h2>
+                <p>Pre-tuned heuristic models recognize and parse standard enterprise documents across diverse industries.</p>
+            </div>
+
+            <div class="domain-card-grid">
+                <div class="domain-card">
+                    <div class="domain-icon" style="background: var(--primary-light); color: var(--primary);">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                    </div>
+                    <h4>Financial &amp; Billing</h4>
+                    <p>Commercial invoices, retail tax receipts, purchase orders, utility bills, payment receipts.</p>
+                </div>
+
+                <div class="domain-card">
+                    <div class="domain-icon" style="background: var(--success-bg); color: var(--success);">
+                        <i class="fa-solid fa-file-medical"></i>
+                    </div>
+                    <h4>Medical &amp; Clinical</h4>
+                    <p>Hospital discharge receipts, diagnostic test reports, lab analyses, pharmacy bills.</p>
+                </div>
+
+                <div class="domain-card">
+                    <div class="domain-icon" style="background: rgba(6,182,212,0.1); color: var(--accent);">
+                        <i class="fa-solid fa-user-graduate"></i>
+                    </div>
+                    <h4>Human Resources</h4>
+                    <p>Resumes and CVs, employment verification letters, diplomas, technical course certificates.</p>
+                </div>
+
+                <div class="domain-card">
+                    <div class="domain-icon" style="background: var(--warning-bg); color: var(--warning);">
+                        <i class="fa-solid fa-id-card"></i>
+                    </div>
+                    <h4>Identity &amp; Legal</h4>
+                    <p>PAN cards, government IDs, corporate registration certificates, official agreements.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TECHNICAL SPECIFICATIONS & TECH STACK -->
+        <div class="saas-card reveal" style="padding: 32px; margin-bottom: 36px;">
+            <div class="about-section-header">
+                <h2><i class="fa-solid fa-sliders" style="color: var(--success);"></i> Technology Stack &amp; Architecture</h2>
+                <p>Engineered on proven, scalable open-source AI libraries and high-performance server runtimes.</p>
+            </div>
+
+            <div class="tech-spec-grid">
+                <div class="tech-spec-item">
+                    <h5><i class="fa-brands fa-python" style="color: var(--primary);"></i> Core Runtime</h5>
+                    <div class="spec-value">Python 3.10+ / Flask</div>
+                    <div class="spec-sub">WSGI Threaded Asynchronous Architecture</div>
+                </div>
+
+                <div class="tech-spec-item">
+                    <h5><i class="fa-solid fa-eye" style="color: var(--accent);"></i> Optical Recognition</h5>
+                    <div class="spec-value">PaddleOCR &amp; PyMuPDF</div>
+                    <div class="spec-sub">Multi-pass text detection &amp; direct extraction</div>
+                </div>
+
+                <div class="tech-spec-item">
+                    <h5><i class="fa-solid fa-brain" style="color: #8B5CF6;"></i> NLP &amp; Intelligence</h5>
+                    <div class="spec-value">spaCy (en_core_web_sm)</div>
+                    <div class="spec-sub">NER entity recognition &amp; regex extractors</div>
+                </div>
+
+                <div class="tech-spec-item">
+                    <h5><i class="fa-solid fa-database" style="color: var(--warning);"></i> Persistence Engine</h5>
+                    <div class="spec-value">MySQL 8.0 / SQLite</div>
+                    <div class="spec-sub">Automated fallback &amp; seamless schema migration</div>
+                </div>
+
+                <div class="tech-spec-item">
+                    <h5><i class="fa-solid fa-chart-simple" style="color: var(--success);"></i> Analytics &amp; Visuals</h5>
+                    <div class="spec-value">Chart.js 4.4 &amp; FontAwesome</div>
+                    <div class="spec-sub">Canvas-based responsive data visualization</div>
+                </div>
+
+                <div class="tech-spec-item">
+                    <h5><i class="fa-solid fa-shield-halved" style="color: var(--danger);"></i> Security System</h5>
+                    <div class="spec-value">PBKDF2 / Bcrypt &amp; RBAC</div>
+                    <div class="spec-sub">Session-based isolation &amp; audit tracking</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CALL TO ACTION / GET STARTED -->
+        <div class="saas-card reveal" style="padding: 44px 32px; text-align: center; background: linear-gradient(135deg, var(--card-bg), var(--background-alt)); border-color: var(--primary);">
+            <div class="hero-badge" style="margin-bottom: 14px;">
+                <i class="fa-solid fa-sparkles"></i> Ready to Automate Your Workflows?
+            </div>
+            <h2 style="font-size: 1.85rem; margin-bottom: 12px;">Start Transforming Documents into Intelligence</h2>
+            <p style="color: var(--text-muted); font-size: 1rem; max-width: 580px; margin: 0 auto 28px auto; line-height: 1.6;">
+                Upload a document now to experience automated classification, entity recognition, layout reconstruction, and structured JSON output.
+            </p>
+            <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+                <a href="{{ url_for('upload_page') }}" class="btn btn-primary btn-lg">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Upload Document
+                </a>
+                <a href="{{ url_for('dashboard_page') }}" class="btn btn-outline btn-lg">
+                    <i class="fa-solid fa-gauge"></i> Open Dashboard
+                </a>
+                <a href="{{ url_for('results_page') }}" class="btn btn-outline btn-lg">
+                    <i class="fa-solid fa-square-poll-vertical"></i> View Results
+                </a>
+            </div>
+        </div>
+
+    </div>
+</section>
+{% endblock %}

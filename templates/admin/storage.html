@@ -1,0 +1,133 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Storage Analytics — Admin Control Center{% endblock %}
+{% block header_title %}Storage Analytics{% endblock %}
+{% block extra_css %}
+<style>
+    .storage-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:20px; }
+    .storage-columns { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
+    .storage-panel { padding:22px; min-width:0; }
+    .storage-table { width:100%; border-collapse:collapse; }
+    .storage-table th,.storage-table td { text-align:left; padding:11px 9px; border-bottom:1px solid var(--card-border); font-size:.84rem; }
+    .storage-table th { color:var(--text-muted); font-size:.73rem; text-transform:uppercase; letter-spacing:.04em; }
+    .storage-table td { overflow-wrap:anywhere; }
+    .storage-scroll { overflow-x:auto; }
+    #storageNotice { display:none; padding:12px 15px; border-radius:10px; margin-bottom:16px; }
+    @media(max-width:850px){.storage-columns{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width:1400px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:20px">
+        <div>
+            <h1 style="font-size:1.5rem;margin:0 0 4px">Database-linked storage</h1>
+            <p style="color:var(--text-muted);font-size:.88rem;margin:0">Only physical files referenced by live MySQL document records are included. Unlinked files are excluded from totals.</p>
+            <small style="color:var(--text-muted)">Last synchronized: <span id="storageLastSync">Loading…</span></small>
+        </div>
+        <button type="button" id="refreshStorageButton" class="btn btn-outline btn-md"><i class="fa-solid fa-arrows-rotate"></i> Refresh storage</button>
+    </div>
+    <div id="storageNotice" role="status"></div>
+    <section class="storage-grid" aria-label="Storage summary">
+        <article class="saas-card metric-card"><div class="metric-icon-box" style="color:var(--primary);background:rgba(37,99,235,.1)"><i class="fa-solid fa-hard-drive"></i></div><div><div id="storageTotalSize" class="metric-val">—</div><div class="metric-title">Linked storage used</div></div></article>
+        <article class="saas-card metric-card"><div class="metric-icon-box" style="color:#8B5CF6;background:rgba(139,92,246,.1)"><i class="fa-solid fa-file-lines"></i></div><div><div id="storageTotalFiles" class="metric-val">—</div><div class="metric-title">Unique physical files</div></div></article>
+        <article class="saas-card metric-card"><div class="metric-icon-box" style="color:var(--success);background:var(--success-bg)"><i class="fa-solid fa-cloud-arrow-up"></i></div><div><div id="storageUploadSummary" class="metric-val">—</div><div class="metric-title">Uploaded files</div></div></article>
+        <article class="saas-card metric-card"><div class="metric-icon-box" style="color:var(--accent);background:rgba(6,182,212,.1)"><i class="fa-solid fa-code"></i></div><div><div id="storageExtractedSummary" class="metric-val">—</div><div class="metric-title">Extracted files</div></div></article>
+        <article class="saas-card metric-card"><div class="metric-icon-box" style="color:var(--warning);background:rgba(245,158,11,.12)"><i class="fa-solid fa-file-export"></i></div><div><div id="storageOutputsSummary" class="metric-val">—</div><div class="metric-title">Output files</div></div></article>
+    </section>
+
+    <div id="storageOrphanNotice" class="badge badge-warning" style="display:none;margin-bottom:18px;padding:12px 15px;text-transform:none"></div>
+    <div class="storage-columns">
+        <section class="saas-card storage-panel">
+            <h2 style="font-size:1.05rem;margin:0 0 14px"><i class="fa-solid fa-folder-tree" style="color:var(--primary);margin-right:7px"></i>Storage categories</h2>
+            <div class="storage-scroll"><table class="storage-table"><thead><tr><th>Category</th><th>Files</th><th>Size</th></tr></thead><tbody id="storageFolders"></tbody></table></div>
+        </section>
+        <section class="saas-card storage-panel">
+            <h2 style="font-size:1.05rem;margin:0 0 14px"><i class="fa-solid fa-file-pie" style="color:#8B5CF6;margin-right:7px"></i>File types</h2>
+            <div class="storage-scroll"><table class="storage-table"><thead><tr><th>Type</th><th>Files</th><th>Total size</th></tr></thead><tbody id="storageTypes"></tbody></table></div>
+        </section>
+    </div>
+    <section class="saas-card storage-panel">
+        <h2 style="font-size:1.05rem;margin:0 0 14px"><i class="fa-solid fa-chart-column" style="color:var(--warning);margin-right:7px"></i>Largest linked files</h2>
+        <div class="storage-scroll"><table class="storage-table"><thead><tr><th>File</th><th>Category</th><th>Document</th><th>Owner</th><th>Size</th></tr></thead><tbody id="storageLargestFiles"></tbody></table></div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const initialStorage = {{ storage|tojson }};
+    function storageCell(row, value, strong) {
+        const cell = document.createElement("td");
+        if (strong) { const b = document.createElement("strong"); b.textContent = value ?? "—"; cell.appendChild(b); }
+        else cell.textContent = value ?? "—";
+        row.appendChild(cell);
+    }
+    function storageEmptyRow(tbody, columns, text) {
+        const row = document.createElement("tr"), cell = document.createElement("td");
+        cell.colSpan = columns; cell.textContent = text; cell.style.cssText = "text-align:center;color:var(--text-muted);padding:22px";
+        row.appendChild(cell); tbody.appendChild(row);
+    }
+    function renderStorage(data) {
+        const storage = data.storage || data;
+        document.getElementById("storageTotalSize").textContent = storage.total_storage || "0 KB";
+        document.getElementById("storageTotalFiles").textContent = String(storage.total_files ?? 0);
+        const folders = storage.folder_stats || {};
+        const setSummary = (element, label) => {
+            const item = folders[label] || {file_count:0,formatted_size:"0 KB"};
+            document.getElementById(element).textContent = `${item.file_count} · ${item.formatted_size}`;
+        };
+        setSummary("storageUploadSummary", "Uploads");
+        setSummary("storageExtractedSummary", "Extracted JSON");
+        setSummary("storageOutputsSummary", "Outputs");
+        document.getElementById("storageLastSync").textContent = storage.last_sync ? new Date(storage.last_sync).toLocaleString() : "Unavailable";
+
+        const folderBody = document.getElementById("storageFolders"); folderBody.replaceChildren();
+        Object.entries(folders).forEach(([name, item]) => {
+            const row = document.createElement("tr"); storageCell(row,name,true); storageCell(row,String(item.file_count ?? 0)); storageCell(row,item.formatted_size || "0 KB",true); folderBody.appendChild(row);
+        });
+        if (!folderBody.children.length) storageEmptyRow(folderBody,3,"No linked storage records.");
+
+        const typeBody = document.getElementById("storageTypes"); typeBody.replaceChildren();
+        Object.entries(storage.extension_breakdown || {}).forEach(([ext,item]) => {
+            const row = document.createElement("tr"); storageCell(row,ext,true); storageCell(row,String(item.count ?? 0)); storageCell(row,item.formatted_size || "0 KB",true); typeBody.appendChild(row);
+        });
+        if (!typeBody.children.length) storageEmptyRow(typeBody,3,"No linked file types.");
+
+        const largestBody = document.getElementById("storageLargestFiles"); largestBody.replaceChildren();
+        (storage.top_files || []).forEach(item => {
+            const row = document.createElement("tr"); storageCell(row,item.name,true); storageCell(row,item.folder);
+            storageCell(row,item.job_id || "No job ID"); storageCell(row,item.owner || "Owner unavailable"); storageCell(row,item.formatted_size || "0 KB",true); largestBody.appendChild(row);
+        });
+        if (!largestBody.children.length) storageEmptyRow(largestBody,5,"No linked files are stored.");
+
+        const orphanNotice = document.getElementById("storageOrphanNotice");
+        if (storage.unlinked_files > 0) {
+            orphanNotice.textContent = `${storage.unlinked_files} unlinked file${storage.unlinked_files === 1 ? "" : "s"} (${formatBytes(storage.unlinked_bytes || 0)}) are excluded because no live MySQL document references them.`;
+            orphanNotice.style.display = "inline-block";
+        } else { orphanNotice.style.display = "none"; }
+    }
+    function formatBytes(bytes) {
+        if (!bytes) return "0 KB";
+        if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024 * 10) / 10} KB`;
+        if (bytes < 1024 * 1024 * 1024) return `${Math.round(bytes / (1024 * 1024) * 100) / 100} MB`;
+        return `${Math.round(bytes / (1024 * 1024 * 1024) * 100) / 100} GB`;
+    }
+    async function refreshStorage() {
+        const button = document.getElementById("refreshStorageButton"), notice = document.getElementById("storageNotice");
+        button.disabled = true;
+        try {
+            const response = await fetch("/api/admin/storage", {cache:"no-store"});
+            const payload = await response.json();
+            if (!response.ok || !payload.success) throw new Error(payload.message || "Storage could not be synchronized.");
+            renderStorage(payload.storage);
+            notice.style.display = "none";
+        } catch (error) {
+            notice.className = "badge badge-danger"; notice.textContent = error.message || "Storage could not be synchronized."; notice.style.display = "block";
+        } finally { button.disabled = false; }
+    }
+    document.getElementById("refreshStorageButton").addEventListener("click", refreshStorage);
+    renderStorage(initialStorage);
+    window.setInterval(refreshStorage, 30000);
+</script>
+{% endblock %}

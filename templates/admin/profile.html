@@ -1,0 +1,152 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Admin Profile — Admin Control Center{% endblock %}
+{% block header_title %}Administrator Profile &amp; Security{% endblock %}
+{% block extra_css %}
+<style>
+    .profile-grid { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr); gap:20px; align-items:start; }
+    .profile-card { padding:24px; }
+    .profile-card h2 { font-size:1.08rem; margin:0 0 8px; }
+    .profile-meta { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:20px; }
+    .profile-meta-item { padding:14px; background:var(--background-alt); border-radius:var(--radius-sm); min-width:0; }
+    .profile-meta-item small { display:block; color:var(--text-muted); font-size:.72rem; text-transform:uppercase; font-weight:700; letter-spacing:.04em; }
+    .profile-meta-item strong { display:block; margin-top:5px; overflow-wrap:anywhere; font-size:.88rem; }
+    .profile-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    @media(max-width:800px){.profile-grid{grid-template-columns:1fr}}
+    @media(max-width:520px){.profile-meta{grid-template-columns:1fr}.profile-card{padding:18px}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width:1100px;margin:0 auto">
+    <div style="margin-bottom:22px">
+        <h1 style="font-size:1.5rem;margin-bottom:4px">Admin Profile</h1>
+        <p style="color:var(--text-muted);font-size:.88rem;margin:0">Manage your account details, password and current session security.</p>
+    </div>
+
+    <div class="profile-grid">
+        <section class="saas-card profile-card">
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px">
+                <div id="profileAvatar" class="user-avatar" style="width:58px;height:58px;font-size:1.45rem;background:linear-gradient(135deg,#8B5CF6,#4F46E5);color:#fff">{{ admin.name[0] if admin.name else 'A' }}</div>
+                <div style="min-width:0">
+                    <h2 id="profileDisplayName" style="font-size:1.2rem;margin:0 0 4px">{{ admin.name }}</h2>
+                    <div id="profileDisplayEmail" style="color:var(--text-muted);font-size:.88rem;overflow-wrap:anywhere">{{ admin.email }}</div>
+                </div>
+            </div>
+            <h2><i class="fa-solid fa-id-card" style="color:var(--primary);margin-right:7px"></i>Profile details</h2>
+            <p style="color:var(--text-muted);font-size:.83rem;margin:0 0 18px">Update the name and email associated with this administrator account.</p>
+            <div id="profileAlert" role="status" style="display:none;margin-bottom:14px"></div>
+            <form id="adminProfileForm" onsubmit="handleSaveProfile(event)">
+                <div class="form-group">
+                    <label class="form-label" for="adminName">Full name</label>
+                    <input id="adminName" class="form-control" type="text" maxlength="255" value="{{ admin.name|e }}" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="adminEmail">Email address</label>
+                    <input id="adminEmail" class="form-control" type="email" maxlength="255" value="{{ admin.email|e }}" required>
+                </div>
+                <div class="profile-actions">
+                    <button id="saveProfileButton" type="submit" class="btn btn-primary btn-md"><i class="fa-solid fa-floppy-disk"></i> Save profile</button>
+                    <button type="reset" class="btn btn-outline btn-md">Reset</button>
+                </div>
+            </form>
+            <div class="profile-meta">
+                <div class="profile-meta-item"><small>Account created</small><strong>{{ admin.created_at or 'Unavailable' }}</strong></div>
+                <div class="profile-meta-item"><small>Last login</small><strong>{{ admin.last_login or 'No login recorded' }}</strong></div>
+                <div class="profile-meta-item"><small>Role</small><strong>{{ session_security.role|title }}</strong></div>
+                <div class="profile-meta-item"><small>Account status</small><strong>{{ session_security.status|title }}</strong></div>
+            </div>
+        </section>
+
+        <div style="display:grid;gap:20px">
+            <section class="saas-card profile-card">
+                <h2><i class="fa-solid fa-shield-halved" style="color:var(--success);margin-right:7px"></i>Session &amp; security</h2>
+                <p style="color:var(--text-muted);font-size:.83rem;margin:0 0 16px">Settings for the authenticated session in this browser.</p>
+                <div class="profile-meta" style="margin-top:0">
+                    <div class="profile-meta-item"><small>Current session</small><strong>Active · {{ session_security.session_type }}</strong></div>
+                    <div class="profile-meta-item"><small>HttpOnly cookie</small><strong>{{ 'Enabled' if session_security.http_only else 'Disabled' }}</strong></div>
+                    <div class="profile-meta-item"><small>Secure cookie</small><strong>{{ 'Enabled' if session_security.secure else 'Disabled' }}</strong></div>
+                    <div class="profile-meta-item"><small>SameSite policy</small><strong>{{ session_security.same_site }}</strong></div>
+                </div>
+                <button type="button" class="btn btn-outline btn-md" style="margin-top:16px" onclick="handleAdminLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sign out this session</button>
+            </section>
+
+            <section class="saas-card profile-card">
+                <h2><i class="fa-solid fa-key" style="color:var(--primary);margin-right:7px"></i>Change password</h2>
+                <p style="color:var(--text-muted);font-size:.83rem;margin:0 0 16px">Confirm your current password before choosing a new one.</p>
+                <div id="pwAlert" role="status" style="display:none;margin-bottom:14px"></div>
+                <form id="adminChangePwForm" onsubmit="handleChangePassword(event)">
+                    <div class="form-group"><label class="form-label" for="currentPassword">Current password</label><input type="password" id="currentPassword" class="form-control" autocomplete="current-password" required></div>
+                    <div class="form-group"><label class="form-label" for="newPassword">New password</label><input type="password" id="newPassword" class="form-control" minlength="6" autocomplete="new-password" required></div>
+                    <div class="form-group"><label class="form-label" for="confirmPassword">Confirm new password</label><input type="password" id="confirmPassword" class="form-control" minlength="6" autocomplete="new-password" required></div>
+                    <button type="submit" id="changePwSubmitBtn" class="btn btn-primary btn-md"><i class="fa-solid fa-floppy-disk"></i> Update password</button>
+                </form>
+            </section>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function handleSaveProfile(event) {
+        event.preventDefault();
+        const button = document.getElementById("saveProfileButton");
+        const alertBox = document.getElementById("profileAlert");
+        const name = document.getElementById("adminName").value.trim();
+        const email = document.getElementById("adminEmail").value.trim();
+        button.disabled = true;
+        try {
+            const response = await fetch("/api/admin/profile", {
+                method: "PATCH", headers: {"Content-Type":"application/json"},
+                body: JSON.stringify({name, email})
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message || "Unable to update profile.");
+            document.getElementById("profileDisplayName").textContent = data.admin.name;
+            document.getElementById("profileDisplayEmail").textContent = data.admin.email;
+            document.getElementById("profileAvatar").textContent = (data.admin.name || "A").charAt(0).toUpperCase();
+            const topbarName = document.querySelector(".admin-user-pill strong");
+            if (topbarName) topbarName.textContent = data.admin.name;
+            alertBox.className = "badge badge-success";
+            alertBox.textContent = data.message;
+            alertBox.style.display = "block";
+        } catch (error) {
+            alertBox.className = "badge badge-danger";
+            alertBox.textContent = error.message || "Network error updating profile.";
+            alertBox.style.display = "block";
+        } finally { button.disabled = false; }
+    }
+
+    async function handleChangePassword(event) {
+        event.preventDefault();
+        const current_password = document.getElementById("currentPassword").value;
+        const new_password = document.getElementById("newPassword").value;
+        const confirm_password = document.getElementById("confirmPassword").value;
+        const alertBox = document.getElementById("pwAlert");
+        const submitBtn = document.getElementById("changePwSubmitBtn");
+        if (new_password !== confirm_password) {
+            alertBox.className = "badge badge-danger";
+            alertBox.textContent = "New password and confirmation do not match.";
+            alertBox.style.display = "block";
+            return;
+        }
+        submitBtn.disabled = true;
+        try {
+            const response = await fetch("/api/admin/profile/password", {
+                method: "POST", headers: {"Content-Type":"application/json"},
+                body: JSON.stringify({current_password, new_password, confirm_password})
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message || "Unable to update password.");
+            showToast("Password updated successfully.", "success");
+            document.getElementById("adminChangePwForm").reset();
+            alertBox.style.display = "none";
+        } catch (error) {
+            alertBox.className = "badge badge-danger";
+            alertBox.textContent = error.message || "Network error updating password.";
+            alertBox.style.display = "block";
+        } finally { submitBtn.disabled = false; }
+    }
+</script>
+{% endblock %}

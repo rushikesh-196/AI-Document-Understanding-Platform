@@ -1,0 +1,405 @@
+{% extends "base.html" %}
+
+{% block title %}Upload & Preview Document — AI Document Intelligence Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Image Lightbox Modal ─────────────────────────────── */
+#imgLightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0,0,0,0.88);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 20px;
+}
+#imgLightbox.open { display: flex; animation: modalBackdropIn 0.25s ease forwards; }
+
+#lightboxImgWrap {
+    position: relative;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    box-shadow: 0 32px 80px rgba(0,0,0,0.7);
+    animation: modalContentIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+#lightboxImg {
+    display: block;
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+    transition: transform 0.25s ease;
+    transform-origin: center center;
+}
+#lightboxControls {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px;
+}
+.lb-btn {
+    padding: 8px 18px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: background 0.2s;
+}
+.lb-btn:hover { background: rgba(255,255,255,0.22); }
+.lb-btn.close-btn { background: rgba(239,68,68,0.25); border-color: rgba(239,68,68,0.4); }
+.lb-btn.close-btn:hover { background: rgba(239,68,68,0.45); }
+
+/* ── Queue Item Cards ─────────────────────────────────── */
+.queue-card {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-md);
+    background: var(--card-bg);
+    overflow: hidden;
+    transition: box-shadow var(--transition), border-color var(--transition);
+}
+.queue-card:hover { border-color: var(--card-border-hover); box-shadow: var(--shadow-hover); }
+
+.queue-thumb {
+    width: 100px;
+    min-width: 100px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--background-alt);
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.queue-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.queue-thumb .thumb-icon {
+    font-size: 2.8rem;
+    opacity: 0.7;
+}
+.thumb-view-btn {
+    position: absolute;
+    inset: 0;
+    background: rgba(37,99,235,0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 1.25rem;
+    color: #fff;
+    opacity: 0;
+}
+.queue-thumb:hover .thumb-view-btn { background: rgba(37,99,235,0.55); opacity: 1; }
+
+.queue-info {
+    flex: 1;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    min-width: 0;
+}
+.queue-filename {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.queue-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.queue-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    gap: 8px;
+    border-left: 1px solid var(--card-border);
+    flex-shrink: 0;
+}
+
+/* ── Sample Document Cards ────────────────────────────── */
+.sample-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 12px;
+    border: 1.5px solid var(--card-border);
+    border-radius: var(--radius-md);
+    background: var(--card-bg);
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    text-align: center;
+    gap: 4px;
+    color: var(--text-main);
+}
+.sample-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 4px 18px rgba(99,102,241,0.15);
+    transform: translateY(-2px);
+}
+.sample-card:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+@media (max-width: 500px) {
+    .queue-thumb { width: 72px; min-width: 72px; height: 72px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section style="padding: 50px 0 70px;">
+    <div class="container" style="max-width: 860px;">
+
+        <!-- PAGE HEADER -->
+        <div style="text-align: center; margin-bottom: 40px;" class="reveal">
+            <div class="hero-badge"><i class="fa-solid fa-cloud-arrow-up"></i> Document Analyzer</div>
+            <h1 style="margin: 14px 0 10px; font-size: clamp(1.8rem, 4vw, 2.6rem);">Upload Your Document</h1>
+            <p style="color: var(--text-muted); font-size: 1rem; max-width: 520px; margin: 0 auto;">
+                Drop a PDF, JPG, PNG, or DOCX file below — our AI pipeline extracts, classifies, and summarizes it in seconds.
+            </p>
+        </div>
+
+        <!-- ── TRY A SAMPLE DOCUMENT ──────────────────────────────── -->
+        <div class="saas-card reveal" style="padding: 24px 32px; margin-bottom: 0;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:18px;">
+                <i class="fa-solid fa-flask" style="color:var(--primary); font-size:1.1rem;"></i>
+                <strong style="font-size:1rem; color:var(--text-main);">Try a Sample Document</strong>
+                <span style="font-size:0.82rem; color:var(--text-muted); margin-left:4px;">— No upload needed</span>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:14px;">
+                <button type="button" class="sample-card" onclick="loadSampleDocument('invoice')" title="Load a sample invoice">
+                    <i class="fa-solid fa-file-invoice-dollar" style="font-size:1.8rem; color:#6366f1; margin-bottom:8px;"></i>
+                    <div style="font-weight:600; font-size:0.9rem;">Invoice</div>
+                    <div style="font-size:0.78rem; color:var(--text-muted);">Vendor invoice with line items</div>
+                </button>
+                <button type="button" class="sample-card" onclick="loadSampleDocument('receipt')" title="Load a sample receipt">
+                    <i class="fa-solid fa-receipt" style="font-size:1.8rem; color:#10b981; margin-bottom:8px;"></i>
+                    <div style="font-weight:600; font-size:0.9rem;">Receipt</div>
+                    <div style="font-size:0.78rem; color:var(--text-muted);">Sales / purchase receipt</div>
+                </button>
+                <button type="button" class="sample-card" onclick="loadSampleDocument('medical')" title="Load a sample medical report">
+                    <i class="fa-solid fa-file-medical" style="font-size:1.8rem; color:#ef4444; margin-bottom:8px;"></i>
+                    <div style="font-weight:600; font-size:0.9rem;">Medical Report</div>
+                    <div style="font-size:0.78rem; color:var(--text-muted);">Lab / diagnostic report</div>
+                </button>
+            </div>
+        </div>
+
+        <div class="saas-card reveal" style="padding: 32px;">
+
+            <!-- ── DRAG & DROP ZONE ───────────────────────────────── -->
+            <div class="upload-dropzone" id="uploadDropzone" style="margin-bottom: 28px;">
+                <input type="file" id="fileInput" accept="image/*,.pdf,.docx" multiple hidden>
+                <div class="dropzone-icon">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                </div>
+                <h3 style="margin: 14px 0 6px; font-size: 1.25rem;">Drag &amp; Drop Your Document Here</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0 0 18px;">
+                    Supports PDF, PNG, JPG, JPEG, DOCX &nbsp;·&nbsp; Max 16 MB per file
+                </p>
+                <button type="button" class="btn btn-outline btn-sm">
+                    <i class="fa-solid fa-folder-open"></i> Browse Files
+                </button>
+            </div>
+
+            <!-- ── BATCH UPLOAD QUEUE ──────────────────────────────── -->
+            <div id="batchQueueContainer" style="display: none; margin-bottom: 28px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                    <strong style="color: var(--text-main); font-size: 0.95rem;">
+                        <i class="fa-solid fa-layer-group" style="color: var(--primary); margin-right: 6px;"></i>
+                        Selected Documents (<span id="batchQueueCount">0</span>)
+                    </strong>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="clearBatchQueue()">
+                        <i class="fa-solid fa-trash-can"></i> Clear All
+                    </button>
+                </div>
+                <div id="batchQueueList" style="display: flex; flex-direction: column; gap: 12px; max-height: 420px; overflow-y: auto; padding-right: 4px;">
+                    <!-- Queue items injected by upload.js -->
+                </div>
+            </div>
+
+            <!-- ── CONFIGURATION GRID ─────────────────────────────── -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 28px;">
+
+                <!-- OCR Engine -->
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="engineSelect">
+                        <i class="fa-solid fa-microchip"></i> OCR Engine
+                    </label>
+                    <select id="engineSelect" class="form-control">
+                        <option value="auto">Auto (PaddleOCR + WinOCR)</option>
+                        <option value="paddle">PaddleOCR — High Accuracy</option>
+                        <option value="tesseract">Tesseract OCR — Fast Mode</option>
+                    </select>
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; display: block;">
+                        Auto mode picks the best engine per document
+                    </small>
+                </div>
+
+                <!-- Language — English only -->
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="langSelect">
+                        <i class="fa-solid fa-globe"></i> Document Language
+                    </label>
+                    <select id="langSelect" class="form-control">
+                        <option value="en" selected>English</option>
+                    </select>
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; display: block;">
+                        English extraction is fully supported
+                    </small>
+                </div>
+
+            </div>
+
+            <!-- ── SUPPORTED FORMATS STRIP ───────────────────────── -->
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 28px; padding: 14px 18px; background: var(--background-alt); border-radius: var(--radius-md); border: 1px solid var(--card-border);">
+                <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600; margin-right: 4px; align-self: center;">SUPPORTED:</span>
+                <span class="badge badge-primary" style="font-size: 0.72rem;"><i class="fa-solid fa-file-pdf"></i> PDF</span>
+                <span class="badge badge-primary" style="font-size: 0.72rem;"><i class="fa-solid fa-file-image"></i> PNG</span>
+                <span class="badge badge-primary" style="font-size: 0.72rem;"><i class="fa-solid fa-file-image"></i> JPG / JPEG</span>
+                <span class="badge badge-primary" style="font-size: 0.72rem;"><i class="fa-solid fa-file-word"></i> DOCX</span>
+                <span style="margin-left: auto; font-size: 0.78rem; color: var(--text-muted); align-self: center;">
+                    <i class="fa-solid fa-lock" style="color: var(--primary);"></i> Processed securely on your server
+                </span>
+            </div>
+
+            <!-- ── 6-STAGE PROGRESS DISPLAY ───────────────────────── -->
+            <div id="progressContainer" class="pipeline-container" style="display: none; margin-bottom: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <strong id="progressStatus" style="font-size: 0.95rem; color: var(--primary);">Analyzing Document...</strong>
+                    <span id="progressPercent" style="font-weight: 700; color: var(--primary);">0%</span>
+                </div>
+                <div class="pipeline-progress-bar">
+                    <div id="progressFill" class="pipeline-fill"></div>
+                </div>
+                <div class="pipeline-stages">
+                    <div class="stage-item" id="stage1">1. Uploading</div>
+                    <div class="stage-item" id="stage2">2. Running OCR</div>
+                    <div class="stage-item" id="stage3">3. Extracting</div>
+                    <div class="stage-item" id="stage4">4. Analyzing</div>
+                    <div class="stage-item" id="stage5">5. AI Summary</div>
+                    <div class="stage-item" id="stage6">6. Results</div>
+                </div>
+            </div>
+
+            <!-- ── ERROR MESSAGE ─────────────────────────────────── -->
+            <div id="uploadErrorMessage" class="badge badge-danger" style="display:none; width:100%; padding:12px; margin-bottom:20px; font-size:0.9rem; text-transform:none;"></div>
+
+            <!-- ── SUBMIT BUTTON ─────────────────────────────────── -->
+            <button type="button" class="btn btn-primary btn-lg" id="extractBtn" disabled style="width: 100%; font-size: 1rem; padding: 15px 24px;">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Process with AI
+            </button>
+
+            <p style="text-align: center; margin-top: 12px; font-size: 0.78rem; color: var(--text-muted);">
+                <i class="fa-solid fa-circle-info"></i> Select one or more documents above to enable processing
+            </p>
+
+        </div>
+    </div>
+</section>
+
+<!-- IMAGE LIGHTBOX MODAL -->
+<div id="imgLightbox" role="dialog" aria-modal="true" aria-label="Image Viewer" onclick="closeLightboxOnBackdrop(event)">
+    <div id="lightboxImgWrap">
+        <img id="lightboxImg" src="" alt="Full Document Preview">
+    </div>
+    <div id="lightboxControls">
+        <button class="lb-btn" onclick="lbZoom(1.2)" title="Zoom In"><i class="fa-solid fa-magnifying-glass-plus"></i> Zoom In</button>
+        <button class="lb-btn" onclick="lbZoom(0.8)" title="Zoom Out"><i class="fa-solid fa-magnifying-glass-minus"></i> Zoom Out</button>
+        <button class="lb-btn" onclick="lbResetZoom()" title="Reset"><i class="fa-solid fa-compress"></i> Reset</button>
+        <button class="lb-btn close-btn" onclick="closeLightbox()" title="Close"><i class="fa-solid fa-xmark"></i> Close</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+<script>
+/**
+ * Load and process a pre-bundled sample document.
+ * Calls POST /api/v1/sample/<type>, then polls progress and redirects to results.
+ */
+async function loadSampleDocument(docType) {
+    const cards = document.querySelectorAll('.sample-card');
+    cards.forEach(c => { c.disabled = true; });
+
+    // Show progress container if available
+    const progress = document.getElementById('progressContainer');
+    if (progress) {
+        progress.style.display = 'block';
+        const label = document.getElementById('progressLabel');
+        if (label) label.textContent = `Loading ${docType} sample…`;
+    }
+
+    let res, data;
+    try {
+        res = await fetch(`/api/v1/sample/${docType}`, { method: 'POST' });
+        data = await res.json();
+    } catch (e) {
+        if (typeof showToast === 'function') showToast('Network error. Please try again.', 'error');
+        cards.forEach(c => { c.disabled = false; });
+        if (progress) progress.style.display = 'none';
+        return;
+    }
+
+    if (!data.success) {
+        if (typeof showToast === 'function') showToast(data.message || 'Failed to load sample.', 'error');
+        cards.forEach(c => { c.disabled = false; });
+        if (progress) progress.style.display = 'none';
+        return;
+    }
+
+    if (typeof showToast === 'function') showToast(`Sample ${docType} loaded — processing…`, 'info');
+
+    const jobId = data.job_id;
+
+    // Poll progress
+    const poll = async () => {
+        try {
+            const pr = await fetch(`/api/v1/progress/${jobId}`);
+            const pd = await pr.json();
+            if (pd.status === 'done' || pd.progress >= 100) {
+                window.location.href = `/results/${jobId}`;
+                return;
+            }
+            if (pd.status === 'error') {
+                if (typeof showToast === 'function') showToast('Sample processing failed.', 'error');
+                cards.forEach(c => { c.disabled = false; });
+                if (progress) progress.style.display = 'none';
+                return;
+            }
+            // Update progress bar if available
+            const bar = document.getElementById('progressBar');
+            if (bar) bar.style.width = `${pd.progress || 0}%`;
+            const label = document.getElementById('progressLabel');
+            if (label) label.textContent = pd.stage || 'Processing…';
+        } catch (_) { /* ignore transient errors */ }
+        setTimeout(poll, 1200);
+    };
+    setTimeout(poll, 1200);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,202 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Analytics &amp; Intelligence — Admin Control Center{% endblock %}
+{% block header_title %}System Analytics &amp; Throughput Metrics{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-analytics-row { display:grid; gap:24px; margin-bottom:28px; }
+    .admin-analytics-primary { grid-template-columns:minmax(0,2fr) minmax(280px,1fr); }
+    .admin-analytics-secondary { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    @media(max-width:850px){ .admin-analytics-primary,.admin-analytics-secondary { grid-template-columns:1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1400px; margin: 0 auto;">
+
+    <div style="margin-bottom: 24px;">
+        <h1 style="font-size: 1.5rem; margin-bottom: 4px;">Platform Analytics</h1>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0;">Comprehensive database-driven metrics analyzing processing volume, document classification distribution, and throughput.</p>
+    </div>
+
+    <!-- CHARTS ROW 1 -->
+    <div class="admin-analytics-row admin-analytics-primary">
+        <!-- VOLUME TIMELINE -->
+        <div class="saas-card" style="padding: 24px;">
+            <h3 style="font-size: 1.05rem; margin-bottom: 16px;">
+                <i class="fa-solid fa-chart-line" style="color: var(--primary); margin-right: 8px;"></i> Document Processing Volume (Last 7 Days)
+            </h3>
+            <div style="position: relative; height: 280px;">
+                <canvas id="adminVolumeChart"></canvas>
+            </div>
+        </div>
+
+        <!-- SUCCESS VS FAILURE -->
+        <div class="saas-card" style="padding: 24px;">
+            <h3 style="font-size: 1.05rem; margin-bottom: 16px;">
+                <i class="fa-solid fa-chart-pie" style="color: var(--success); margin-right: 8px;"></i> Processing Success Ratio
+            </h3>
+            <div style="position: relative; height: 280px;">
+                <canvas id="adminSuccessChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHARTS ROW 2 & USER ACTIVITY RANKING -->
+    <div class="admin-analytics-row admin-analytics-secondary" style="margin-bottom:0">
+        <div class="saas-card" style="padding: 24px;">
+            <h3 style="font-size: 1.05rem; margin-bottom: 16px;"><i class="fa-solid fa-user-plus" style="color: #06B6D4; margin-right: 8px;"></i> User Registrations (Last 7 Days)</h3>
+            <div style="position: relative; height: 280px;"><canvas id="adminUsersChart"></canvas></div>
+        </div>
+        <!-- DOCUMENT TYPE DISTRIBUTION -->
+        <div class="saas-card" style="padding: 24px;">
+            <h3 style="font-size: 1.05rem; margin-bottom: 16px;">
+                <i class="fa-solid fa-tags" style="color: #8B5CF6; margin-right: 8px;"></i> Document Type Breakdown
+            </h3>
+            <div style="position: relative; height: 280px;">
+                <canvas id="adminTypeChart"></canvas>
+            </div>
+        </div>
+
+        <!-- USER ACTIVITY RANKING TABLE -->
+        <div class="saas-card" style="padding: 24px;">
+            <h3 style="font-size: 1.05rem; margin-bottom: 16px;">
+                <i class="fa-solid fa-trophy" style="color: var(--warning); margin-right: 8px;"></i> Top Active Users
+            </h3>
+            <div class="table-responsive">
+                <table class="saas-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Documents</th>
+                            <th>Last Upload</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if analytics.user_activity_ranking %}
+                            {% for u in analytics.user_activity_ranking %}
+                            <tr>
+                                <td>
+                                    <strong style="color: var(--text-main); font-size: 0.88rem;">{{ u.name }}</strong>
+                                    <div style="color: var(--text-muted); font-size: 0.75rem;">{{ u.email }}</div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-primary">{{ u.count }} documents</span>
+                                </td>
+                                <td style="font-size: 0.82rem; color: var(--text-muted);">{{ u.last_upload or 'No uploads' }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                                    No user activity recorded.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const analyticsData = {{ analytics | tojson }};
+        renderAdminCharts(analyticsData);
+    });
+
+    function renderAdminCharts(data) {
+        if (!window.Chart) return;
+        const style = getComputedStyle(document.body);
+        const primary = style.getPropertyValue('--primary').trim() || '#2563EB';
+        const success = style.getPropertyValue('--success').trim() || '#10B981';
+        const danger = style.getPropertyValue('--danger').trim() || '#EF4444';
+        const warning = style.getPropertyValue('--warning').trim() || '#F59E0B';
+        const textColor = style.getPropertyValue('--text-main').trim() || '#0F172A';
+
+        Chart.defaults.color = textColor;
+        Chart.defaults.font.family = "'Poppins', sans-serif";
+
+        // 1. Volume Timeline (Bar/Line)
+        const timeline = data.volume_timeline || [];
+        const volLabels = timeline.map(t => t.date);
+        const volData = timeline.map(t => t.count || 0);
+
+        new Chart(document.getElementById('adminVolumeChart'), {
+            type: 'bar',
+            data: {
+                labels: volLabels,
+                datasets: [{
+                    label: 'Documents Uploaded',
+                    data: volData,
+                    backgroundColor: primary,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 } }
+                }
+            }
+        });
+
+        // 2. Success vs Failure (Doughnut)
+        const statusDist = data.status_distribution || {};
+        const statusLabels = Object.keys(statusDist);
+        const statusValues = Object.values(statusDist);
+
+        new Chart(document.getElementById('adminSuccessChart'), {
+            type: 'doughnut',
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    data: statusValues,
+                    backgroundColor: [success, danger, warning, '#6366F1', '#06B6D4'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%'
+            }
+        });
+
+        // 3. Document Types Distribution (Pie / Bar)
+        const typeDist = data.type_distribution || {};
+        const typeLabels = Object.keys(typeDist);
+        const typeCounts = Object.values(typeDist);
+
+        new Chart(document.getElementById('adminTypeChart'), {
+            type: 'pie',
+            data: {
+                labels: typeLabels,
+                datasets: [{
+                    data: typeCounts,
+                    backgroundColor: ['#8B5CF6', '#2563EB', '#06B6D4', '#10B981', '#F59E0B', '#EC4899', '#6366F1'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        const registrations = data.registration_timeline || [];
+        new Chart(document.getElementById('adminUsersChart'), {
+            type: 'bar',
+            data: { labels: registrations.map(t => t.date), datasets: [{ label: 'Registrations', data: registrations.map(t => t.count || 0), backgroundColor: '#06B6D4', borderRadius: 6 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+        });
+    }
+</script>
+{% endblock %}

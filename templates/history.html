@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Document History — AI Document Intelligence Platform{% endblock %}
+
+{% block content %}
+<section style="padding: 40px 0;">
+    <div class="container">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 32px;" class="reveal">
+            <div>
+                <h1>Document History</h1>
+                <p>Browse and review all previously processed documents.</p>
+            </div>
+            <a href="{{ url_for('upload_page') }}" class="btn btn-primary btn-md">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Upload New Document
+            </a>
+        </div>
+
+        <!-- SEARCH & FILTER BAR -->
+        <div class="saas-card reveal" style="margin-bottom: 24px; padding: 16px 24px;">
+            <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center;">
+                <div style="flex: 1; min-width: 240px; position: relative;">
+                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-light);"></i>
+                    <input type="text" id="historySearchInput" class="form-control" placeholder="Search document name, type, or Job ID..." style="padding-left: 40px;">
+                </div>
+                <div style="width: 180px;">
+                    <select id="historyTypeFilter" class="form-control">
+                        <option value="ALL">All Types</option>
+                        <option value="INVOICE">Invoice</option>
+                        <option value="ID">Identity Card</option>
+                        <option value="RESUME">Resume</option>
+                        <option value="RECEIPT">Receipt</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTORY DATA TABLE -->
+        <div class="saas-card reveal">
+            <div class="table-responsive">
+                <table class="saas-table">
+                    <thead>
+                        <tr>
+                            <th>Document</th>
+                            <th>Type</th>
+                            <th>Uploaded Date</th>
+                            <th>Status</th>
+                            <th>Job ID</th>
+                            <th style="text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userHistoryTableBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                                Loading history records...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/history.js') }}"></script>
+{% endblock %}

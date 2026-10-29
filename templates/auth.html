@@ -1,0 +1,515 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In — AI Document Intelligence Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ============================
+       AUTH PAGE STYLES
+       ============================ */
+    .auth-page-wrapper {
+        min-height: calc(100vh - 120px);
+        display: flex;
+        align-items: center;
+        padding: 40px 16px;
+    }
+
+    .auth-container {
+        width: 100%;
+        max-width: 460px;
+        margin: 0 auto;
+    }
+
+    /* Portal Switcher */
+    .portal-switcher {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 2px solid var(--card-border);
+        margin-bottom: 28px;
+        background: var(--card-bg);
+    }
+
+    .portal-btn {
+        padding: 14px 10px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-family: var(--font-main);
+        font-weight: 600;
+        font-size: 0.92rem;
+        transition: all 0.25s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: var(--text-muted);
+        position: relative;
+    }
+
+    .portal-btn:first-child {
+        border-right: 1px solid var(--card-border);
+    }
+
+    .portal-btn.user-active {
+        background: var(--primary);
+        color: #fff;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);
+    }
+
+    .portal-btn.admin-active {
+        background: linear-gradient(135deg, #7C3AED, #4F46E5);
+        color: #fff;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);
+    }
+
+    .portal-btn:not(.user-active):not(.admin-active):hover {
+        background: var(--background-alt);
+        color: var(--text-main);
+    }
+
+    /* Auth Card */
+    .auth-card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 20px;
+        padding: 36px 32px;
+        box-shadow: var(--shadow-md);
+    }
+
+    @media (max-width: 480px) {
+        .auth-card {
+            padding: 28px 20px;
+        }
+    }
+
+    /* Header icon */
+    .auth-icon-ring {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        margin: 0 auto 16px;
+    }
+
+    .auth-icon-ring.user-ring {
+        background: rgba(37, 99, 235, 0.12);
+        color: var(--primary);
+    }
+
+    .auth-icon-ring.admin-ring {
+        background: rgba(124, 58, 237, 0.14);
+        color: #7C3AED;
+    }
+
+    /* Admin restricted notice */
+    .admin-restricted-notice {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(124, 58, 237, 0.08);
+        border: 1px solid rgba(124, 58, 237, 0.2);
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 0.82rem;
+        color: #7C3AED;
+        font-weight: 600;
+        margin-bottom: 22px;
+    }
+
+
+    /* Alert */
+    .auth-alert {
+        display: none;
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        line-height: 1.45;
+    }
+
+    .auth-alert.error {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.25);
+        color: #DC2626;
+    }
+
+    .auth-alert.success {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        color: #059669;
+    }
+
+    /* Form */
+    .auth-form-input {
+        width: 100%;
+        padding: 13px 16px;
+        border-radius: 10px;
+        border: 1.5px solid var(--card-border);
+        background: var(--background);
+        color: var(--text-main);
+        font-family: var(--font-main);
+        font-size: 0.92rem;
+        transition: border-color 0.2s;
+        box-sizing: border-box;
+    }
+
+    .auth-form-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .auth-form-input.admin-field:focus {
+        border-color: #7C3AED;
+        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+    }
+
+    .auth-form-label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 7px;
+    }
+
+    .auth-form-group {
+        margin-bottom: 18px;
+    }
+
+    /* Submit buttons */
+    .auth-submit-btn {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 10px;
+        font-family: var(--font-main);
+        font-size: 0.95rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        margin-top: 6px;
+        letter-spacing: 0.2px;
+    }
+
+    .auth-submit-btn:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    .auth-submit-btn.user-btn {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    .auth-submit-btn.user-btn:hover:not(:disabled) {
+        background: var(--primary-dark, #1d4ed8);
+        transform: translateY(-1px);
+    }
+
+    .auth-submit-btn.admin-btn {
+        background: linear-gradient(135deg, #7C3AED, #4F46E5);
+        color: #fff;
+    }
+
+    .auth-submit-btn.admin-btn:hover:not(:disabled) {
+        background: linear-gradient(135deg, #6D28D9, #4338CA);
+        transform: translateY(-1px);
+    }
+
+    /* Divider */
+    .auth-divider {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 0.875rem;
+        color: var(--text-muted);
+    }
+
+    .auth-divider a {
+        color: var(--primary);
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .auth-divider a:hover {
+        text-decoration: underline;
+    }
+
+    /* Admin security footer */
+    .admin-security-footer {
+        margin-top: 20px;
+        padding: 11px 14px;
+        background: var(--background-alt);
+        border-radius: 10px;
+        font-size: 0.79rem;
+        color: var(--text-muted);
+        text-align: center;
+        line-height: 1.4;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-page-wrapper">
+    <div class="auth-container">
+
+        <!-- =====================
+             PORTAL SWITCHER
+             ===================== -->
+        <div class="portal-switcher">
+            <button type="button" class="portal-btn user-active" id="userPortalBtn" onclick="switchPortal('user')">
+                <i class="fa-solid fa-user"></i>
+                User Login
+            </button>
+            <button type="button" class="portal-btn" id="adminPortalBtn" onclick="switchPortal('admin')">
+                <i class="fa-solid fa-shield-halved"></i>
+                Admin Login
+            </button>
+        </div>
+
+        <!-- =====================
+             AUTH CARD
+             ===================== -->
+        <div class="auth-card">
+
+            <!-- Alert Box (shared) -->
+            <div id="authAlert" class="auth-alert error"></div>
+
+            <!-- ==================
+                 USER PORTAL
+                 ================== -->
+            <div id="userPortalContent">
+
+
+                <!-- USER SIGN IN FORM -->
+                <div id="userLoginSection">
+                    <div style="text-align: center; margin-bottom: 22px;">
+                        <div class="auth-icon-ring user-ring">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <h2 style="font-size: 1.4rem; margin-bottom: 6px;">Welcome Back</h2>
+                        <p style="color: var(--text-muted); font-size: 0.875rem;">Sign in to your document intelligence account</p>
+                    </div>
+
+                    <form id="userLoginForm" onsubmit="handleUserLogin(event)">
+                        <div class="auth-form-group">
+                            <label class="auth-form-label" for="userEmail">
+                                <i class="fa-solid fa-envelope" style="color: var(--primary); margin-right: 5px;"></i> Email Address
+                            </label>
+                            <input type="email" id="userEmail" class="auth-form-input" placeholder="you@example.com" required autocomplete="username">
+                        </div>
+
+                        <div class="auth-form-group">
+                            <label class="auth-form-label" for="userPassword">
+                                <i class="fa-solid fa-lock" style="color: var(--primary); margin-right: 5px;"></i> Password
+                            </label>
+                            <input type="password" id="userPassword" class="auth-form-input" placeholder="••••••••" required autocomplete="current-password">
+                        </div>
+
+                        <button type="submit" class="auth-submit-btn user-btn" id="userLoginBtn">
+                            <i class="fa-solid fa-right-to-bracket"></i> Sign In
+                        </button>
+                    </form>
+
+                    <div class="auth-divider">
+                        Don't have an account?
+                        <a href="/register">Create Account</a>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ==================
+                 ADMIN PORTAL
+                 ================== -->
+            <div id="adminPortalContent" style="display: none;">
+
+                <!-- Restricted Notice -->
+                <div class="admin-restricted-notice">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    Restricted — Authorized Administrators Only
+                </div>
+
+                <div style="text-align: center; margin-bottom: 22px;">
+                    <div class="auth-icon-ring admin-ring">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                    <h2 style="font-size: 1.4rem; margin-bottom: 6px;">Admin Portal</h2>
+                    <p style="color: var(--text-muted); font-size: 0.875rem;">Enter your administrator credentials to access the control center</p>
+                </div>
+
+                <form id="adminLoginForm" onsubmit="handleAdminLogin(event)">
+                    <div class="auth-form-group">
+                        <label class="auth-form-label" for="adminEmail">
+                            <i class="fa-solid fa-envelope" style="color: #7C3AED; margin-right: 5px;"></i> Administrator Email
+                        </label>
+                        <input type="email" id="adminEmail" class="auth-form-input admin-field" placeholder="admin@yourdomain.com" required autocomplete="username">
+                    </div>
+
+                    <div class="auth-form-group">
+                        <label class="auth-form-label" for="adminPassword">
+                            <i class="fa-solid fa-key" style="color: #7C3AED; margin-right: 5px;"></i> Admin Password
+                        </label>
+                        <input type="password" id="adminPassword" class="auth-form-input admin-field" placeholder="••••••••" required autocomplete="current-password">
+                    </div>
+
+                    <button type="submit" class="auth-submit-btn admin-btn" id="adminLoginBtn">
+                        <i class="fa-solid fa-shield-halved"></i> Access Admin Dashboard
+                    </button>
+                </form>
+
+                <!-- "Not an admin?" helpful hint -->
+                <div class="auth-divider" style="margin-top: 18px;">
+                    Not an admin?
+                    <a href="#" onclick="switchPortal('user'); return false;">Go to User Login</a>
+                </div>
+
+                <div class="admin-security-footer">
+                    <i class="fa-solid fa-lock" style="margin-right: 4px;"></i>
+                    This portal is monitored. Unauthorized access attempts are logged and reported.
+                </div>
+            </div>
+
+        </div><!-- /auth-card -->
+    </div><!-- /auth-container -->
+</div><!-- /auth-page-wrapper -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentPortal = 'user';
+
+    /* ========================
+       PORTAL SWITCH
+       ======================== */
+    function switchPortal(portal) {
+        currentPortal = portal;
+
+        const userBtn   = document.getElementById('userPortalBtn');
+        const adminBtn  = document.getElementById('adminPortalBtn');
+        const userPane  = document.getElementById('userPortalContent');
+        const adminPane = document.getElementById('adminPortalContent');
+        const alert     = document.getElementById('authAlert');
+
+        // Hide alert when switching
+        alert.style.display = 'none';
+
+        if (portal === 'admin') {
+            // Activate admin button
+            userBtn.classList.remove('user-active');
+            adminBtn.classList.add('admin-active');
+
+            // Show admin, hide user
+            userPane.style.display  = 'none';
+            adminPane.style.display = 'block';
+
+            // Focus email field
+            setTimeout(() => document.getElementById('adminEmail').focus(), 100);
+        } else {
+            // Activate user button
+            adminBtn.classList.remove('admin-active');
+            userBtn.classList.add('user-active');
+
+            // Show user, hide admin
+            adminPane.style.display = 'none';
+            userPane.style.display  = 'block';
+        }
+    }
+
+    /* ========================
+       ALERT HELPER
+       ======================== */
+    function showAlert(message, type = 'error') {
+        const alert = document.getElementById('authAlert');
+        alert.className = `auth-alert ${type}`;
+        alert.innerHTML = `<i class="fa-solid fa-${type === 'error' ? 'circle-xmark' : 'circle-check'}" style="margin-right:7px;"></i>${message}`;
+        alert.style.display = 'block';
+        alert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    /* ========================
+       USER LOGIN
+       ======================== */
+    async function handleUserLogin(event) {
+        event.preventDefault();
+        const email    = document.getElementById('userEmail').value.trim();
+        const password = document.getElementById('userPassword').value;
+        const btn      = document.getElementById('userLoginBtn');
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Signing In...';
+
+        try {
+            const res = await AuthManager.loginUser(email, password, 'user');
+            if (res.success) {
+                showAlert(`Welcome back, ${res.user.name}! Redirecting...`, 'success');
+                setTimeout(() => window.location.href = res.redirect || '/dashboard', 600);
+            } else {
+                showAlert(res.message || 'Login failed. Please check your credentials.');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Sign In';
+            }
+        } catch (e) {
+            showAlert('Network error. Please try again.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Sign In';
+        }
+    }
+
+    /* ========================
+       ADMIN LOGIN
+       ======================== */
+    async function handleAdminLogin(event) {
+        event.preventDefault();
+        const email    = document.getElementById('adminEmail').value.trim();
+        const password = document.getElementById('adminPassword').value;
+        const btn      = document.getElementById('adminLoginBtn');
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Verifying...';
+
+        try {
+            const res = await AuthManager.loginUser(email, password, 'admin');
+            if (res.success) {
+                showAlert(`Admin authenticated. Welcome, ${res.user.name}!`, 'success');
+                setTimeout(() => window.location.href = res.redirect || '/admin/dashboard', 600);
+            } else {
+                showAlert(res.message || 'Admin authentication failed. Check your credentials.');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Access Admin Dashboard';
+            }
+        } catch (e) {
+            showAlert('Network error. Please try again.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Access Admin Dashboard';
+        }
+    }
+
+    /* ========================
+       INIT FROM URL PARAMS
+       ======================== */
+    document.addEventListener('DOMContentLoaded', () => {
+        const params = new URLSearchParams(window.location.search);
+        const portal = params.get('portal') || params.get('mode');
+
+        if (portal === 'admin') {
+            switchPortal('admin');
+        } else if (portal === 'register') {
+            // Registration is now a separate page
+            window.location.href = '/register';
+        } else {
+            switchPortal('user');
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Error Logs &amp; Diagnostics — Admin Control Center{% endblock %}
+{% block header_title %}Error Monitor &amp; Extraction Failure Diagnostics{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1400px; margin: 0 auto;">
+
+    <!-- HEADER -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+        <div>
+            <h1 style="font-size: 1.5rem; margin-bottom: 4px;">OCR &amp; AI Error Diagnostics</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0;">Database-recorded OCR, extraction and processing errors from the last 7 days.</p>
+        </div>
+        <button type="button" class="btn btn-outline btn-md" onclick="window.location.reload()">
+            <i class="fa-solid fa-arrows-rotate"></i> Refresh Error Logs
+        </button>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="saas-card" style="padding: 16px 20px; margin-bottom: 24px;">
+        <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 250px; position: relative;">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                <input type="text" id="errorSearchInput" class="form-control" placeholder="Search by error type, message, document, or stage..." style="padding-left: 38px;" oninput="filterErrorsClient()">
+            </div>
+
+            <form method="GET" action="{{ url_for('admin.error_logs_page') }}" style="display: flex; gap: 10px; align-items: center;">
+                <div style="width: 220px;">
+                    <select name="stage" class="form-control" onchange="this.form.submit()">
+                        <option value="ALL" {% if selected_stage == 'ALL' %}selected{% endif %}>All Pipeline Stages</option>
+                        <option value="Upload" {% if selected_stage == 'Upload' %}selected{% endif %}>Upload</option>
+                        <option value="File Validation" {% if selected_stage == 'File Validation' %}selected{% endif %}>File Validation</option>
+                        <option value="OCR" {% if selected_stage == 'OCR' %}selected{% endif %}>OCR</option>
+                        <option value="Text Extraction" {% if selected_stage == 'Text Extraction' %}selected{% endif %}>Text Extraction</option>
+                        <option value="Document Classification" {% if selected_stage == 'Document Classification' %}selected{% endif %}>Document Classification</option>
+                        <option value="Information Extraction" {% if selected_stage == 'Information Extraction' %}selected{% endif %}>Information Extraction</option>
+                        <option value="JSON Generation" {% if selected_stage == 'JSON Generation' %}selected{% endif %}>JSON Generation</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-outline btn-md">Filter</button>
+                {% if selected_stage and selected_stage != 'ALL' %}
+                <a href="{{ url_for('admin.error_logs_page') }}" class="btn btn-outline btn-md">Reset</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- ERROR LOGS TABLE -->
+    <div class="saas-card" style="padding: 24px;">
+        <div class="table-responsive">
+            <table class="saas-table" id="errorLogsTable">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>User</th>
+                        <th>Document &amp; Job</th>
+                        <th>Pipeline Stage</th>
+                        <th>Error Type</th>
+                        <th>Diagnostic Details &amp; Stack Trace</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if logs %}
+                        {% for log in logs %}
+                        <tr>
+                            <td style="font-family: var(--font-code); font-size: 0.8rem; color: var(--text-muted); white-space: nowrap;">
+                                {{ log.created_at }}
+                            </td>
+                            <td>
+                                <strong style="color: var(--text-main); font-size: 0.88rem;">{{ log.user_name }}</strong>
+                            </td>
+                            <td>
+                                <strong style="color: var(--text-main); font-size: 0.88rem;">{{ log.document_name }}</strong>
+                                {% if log.job_id != 'N/A' %}
+                                <div style="color: var(--text-muted); font-family: var(--font-code); font-size: 0.75rem;">{{ log.job_id }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge badge-warning">{{ log.stage }}</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-danger">{{ log.error_type }}</span>
+                            </td>
+                            <td>
+                                <div style="font-family: var(--font-code); font-size: 0.82rem; color: var(--danger); max-width: 480px; word-break: break-word; line-height: 1.4;">
+                                    {{ log.error_message }}
+                                </div>
+                                {% if log.stack_trace %}
+                                <details style="margin-top: 6px; font-size: 0.78rem;">
+                                    <summary style="cursor: pointer; color: var(--primary); font-weight: 600;">
+                                        <i class="fa-solid fa-code"></i> View Stack Trace
+                                    </summary>
+                                    <pre style="margin-top: 6px; padding: 10px; background: var(--background-alt); border-radius: var(--radius-sm); color: var(--text-muted); font-family: var(--font-code); font-size: 0.75rem; overflow-x: auto; max-height: 200px;">{{ log.stack_trace }}</pre>
+                                </details>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--success); padding: 48px 24px;">
+                                <i class="fa-solid fa-circle-check" style="font-size: 2.5rem; margin-bottom: 12px; display: block;"></i>
+                                <strong style="font-size: 1.1rem;">Zero System Errors Reported</strong>
+                                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">The AI Document Extraction pipeline has not encountered any critical exceptions.</p>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filterErrorsClient() {
+        const query = (document.getElementById("errorSearchInput").value || "").toLowerCase().trim();
+        const rows = document.querySelectorAll("#errorLogsTable tbody tr");
+
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = (!query || text.includes(query)) ? "" : "none";
+        });
+    }
+</script>
+{% endblock %}

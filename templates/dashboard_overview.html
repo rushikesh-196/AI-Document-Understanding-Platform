@@ -1,0 +1,818 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — AI Document Intelligence Platform{% endblock %}
+
+{% block content %}
+<section class="dashboard-section">
+    <div class="container">
+        <!-- WELCOME SECTION -->
+        <div class="dashboard-header reveal">
+            <h1 style="margin-bottom: 8px;">Welcome back, <span id="dashUserName" class="gradient-text">{{ user.name if user else 'User' }}</span></h1>
+            <p>Manage your documents, monitor extraction pipelines, and review AI-driven analytics sourced directly from your database.</p>
+        </div>
+
+        <!-- TOP METRICS CARDS (4 Real Counts) -->
+        <div class="metrics-grid stagger-children reveal">
+            <!-- Card 1: Total Documents -->
+            <div class="saas-card metric-card">
+                <div class="metric-icon-box">
+                    <i class="fa-solid fa-file-contract"></i>
+                </div>
+                <div>
+                    <div class="metric-val" id="metricTotalDocs">0</div>
+                    <div class="metric-title">Total Documents</div>
+                </div>
+            </div>
+
+            <!-- Card 2: Processed Documents -->
+            <div class="saas-card metric-card">
+                <div class="metric-icon-box" style="color: var(--success); background: var(--success-bg);">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div>
+                    <div class="metric-val" id="metricProcessedDocs">0</div>
+                    <div class="metric-title">Processed Documents</div>
+                </div>
+            </div>
+
+            <!-- Card 3: Processing / Pending -->
+            <div class="saas-card metric-card">
+                <div class="metric-icon-box" style="color: var(--warning); background: var(--warning-bg);">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                </div>
+                <div>
+                    <div class="metric-val" id="metricProcessingDocs">0</div>
+                    <div class="metric-title">Processing / Pending</div>
+                </div>
+            </div>
+
+            <!-- Card 4: Failed Documents -->
+            <div class="saas-card metric-card">
+                <div class="metric-icon-box" style="color: var(--danger); background: var(--danger-bg);">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </div>
+                <div>
+                    <div class="metric-val" id="metricFailedDocs">0</div>
+                    <div class="metric-title">Failed Documents</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN DASHBOARD ACTIONS -->
+        <div class="action-cards-grid stagger-children reveal">
+            <a href="{{ url_for('upload_page') }}" class="saas-card action-card">
+                <div class="metric-icon-box">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                </div>
+                <div>
+                    <h4 style="margin: 0 0 4px 0;">Upload Document</h4>
+                    <p style="font-size: 0.85rem; margin: 0; color: var(--text-muted);">Process new file with AI OCR pipeline</p>
+                </div>
+            </a>
+
+            <a href="{{ url_for('results_page') }}" id="viewLatestResultsBtn" class="saas-card action-card">
+                <div class="metric-icon-box" style="color: var(--success); background: var(--success-bg);">
+                    <i class="fa-solid fa-square-poll-vertical"></i>
+                </div>
+                <div>
+                    <h4 style="margin: 0 0 4px 0;">View Results</h4>
+                    <p style="font-size: 0.85rem; margin: 0; color: var(--text-muted);">Review latest AI extraction analysis</p>
+                </div>
+            </a>
+
+            <a href="{{ url_for('history_page') }}" class="saas-card action-card">
+                <div class="metric-icon-box" style="color: var(--accent); background: rgba(6,182,212,0.1);">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+                <div>
+                    <h4 style="margin: 0 0 4px 0;">Document History</h4>
+                    <p style="font-size: 0.85rem; margin: 0; color: var(--text-muted);">Browse and manage past extractions</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- ANALYTICS CHARTS (BALANCED THREE-CARD GRID) -->
+        <div class="analytics-grid reveal">
+            <!-- CHART 1: DOCUMENT VOLUME -->
+            <div class="saas-card analytics-card">
+                <div class="chart-card-header">
+                    <h3><i class="fa-solid fa-chart-column" style="color: var(--primary);"></i> Document Upload Activity</h3>
+                    <div class="period-filter-group" role="group" aria-label="Volume Time Range">
+                        <button type="button" class="period-filter-btn" data-period="7">7D</button>
+                        <button type="button" class="period-filter-btn active" data-period="30">30D</button>
+                        <button type="button" class="period-filter-btn" data-period="90">90D</button>
+                        <button type="button" class="period-filter-btn" data-period="all">ALL</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="volumeChart"></canvas>
+                    <div id="volumeEmptyState" class="chart-empty-state" style="display: none;">
+                        <i class="fa-solid fa-chart-simple"></i>
+                        <h5>No document uploads in this period.</h5>
+                        <p>Upload new files to start tracking your daily processing throughput.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHART 2: DOCUMENT TYPES -->
+            <div class="saas-card analytics-card">
+                <div class="chart-card-header">
+                    <h3><i class="fa-solid fa-chart-pie" style="color: var(--accent);"></i> Document Types</h3>
+                    <span id="typesTotalBadge" class="badge badge-primary" style="display: none; font-size: 0.78rem; padding: 4px 8px;">0 TYPES</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="typeChart"></canvas>
+                    <div id="typeEmptyState" class="chart-empty-state" style="display: none;">
+                        <i class="fa-solid fa-tags"></i>
+                        <h5>No document type data available.</h5>
+                        <p>Classified document categories will appear here once files are processed.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHART 3: CONFIDENCE ANALYTICS -->
+            <div class="saas-card analytics-card">
+                <div class="chart-card-header">
+                    <h3><i class="fa-solid fa-chart-line" style="color: var(--success);"></i> Confidence Analytics</h3>
+                    <span id="avgConfidenceBadge" class="badge badge-success" style="display: none; font-size: 0.78rem; padding: 4px 8px;">AVG 0%</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="confidenceChart"></canvas>
+                    <div id="confidenceEmptyState" class="chart-empty-state" style="display: none;">
+                        <i class="fa-solid fa-bullseye"></i>
+                        <h5>No confidence data available yet.</h5>
+                        <p>Extraction confidence scores will plot here as documents are processed.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RECENT DOCUMENTS TABLE (REAL DATABASE DATA ONLY) -->
+        <div class="saas-card reveal" style="overflow: hidden;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <h3 style="margin: 0 0 4px 0;"><i class="fa-solid fa-clock-rotate-left" style="color: var(--primary); margin-right: 8px;"></i> Recent Documents</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Latest processed documents from your account</p>
+                </div>
+                <a href="{{ url_for('history_page') }}" class="btn btn-outline btn-sm">
+                    <i class="fa-solid fa-list-check"></i> View All History
+                </a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="saas-table" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding: 12px 16px;">Document Name</th>
+                            <th style="text-align: left; padding: 12px 16px;">Document Type</th>
+                            <th style="text-align: left; padding: 12px 16px;">Uploaded</th>
+                            <th style="text-align: left; padding: 12px 16px;">Status</th>
+                            <th style="text-align: left; padding: 12px 16px;">Confidence</th>
+                            <th style="text-align: right; padding: 12px 16px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashboardRecentTable">
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                                <i class="fa-solid fa-spinner fa-spin" style="margin-right: 8px;"></i> Loading your documents...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    /* ==========================================================================
+       REAL DATABASE USER DASHBOARD CONTROLLER
+       Strictly renders verified data from /api/dashboard/* endpoints.
+       Zero hardcoded, fake, demo, or random statistics.
+       ========================================================================== */
+
+    let volumeChartInstance = null;
+    let typeChartInstance = null;
+    let confidenceChartInstance = null;
+    let currentVolumePeriod = "30";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        // Resolve user display name
+        const user = (window.APP_CURRENT_USER) || (typeof AuthManager !== 'undefined' ? AuthManager.getCurrentUser() : null);
+        if (user && user.name) {
+            const nameEl = document.getElementById("dashUserName");
+            if (nameEl) nameEl.textContent = user.name;
+        }
+
+        // Initialize Volume Filter Buttons
+        document.querySelectorAll(".period-filter-btn").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                e.preventDefault();
+                document.querySelectorAll(".period-filter-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                currentVolumePeriod = btn.getAttribute("data-period") || "30";
+                loadVolumeChart(currentVolumePeriod);
+            });
+        });
+
+        // Listen for Theme Toggle to refresh charts with updated text/border colors
+        const themeToggle = document.getElementById("themeToggle");
+        if (themeToggle) {
+            themeToggle.addEventListener("click", () => {
+                setTimeout(() => {
+                    reloadAllCharts();
+                }, 150);
+            });
+        }
+
+        // Initial Data Fetch
+        loadDashboardData();
+    });
+
+    async function loadDashboardData() {
+        await Promise.allSettled([
+            loadStats(),
+            loadVolumeChart(currentVolumePeriod),
+            loadTypeChart(),
+            loadConfidenceChart(),
+            loadRecentDocuments()
+        ]);
+    }
+
+    function reloadAllCharts() {
+        loadVolumeChart(currentVolumePeriod);
+        loadTypeChart();
+        loadConfidenceChart();
+    }
+
+    /* --------------------------------------------------------------------------
+       1. Top 4 Metric Cards
+       -------------------------------------------------------------------------- */
+    async function loadStats() {
+        try {
+            const res = await fetch("/api/dashboard/stats", {
+                headers: { "Accept": "application/json" },
+                credentials: "same-origin"
+            });
+            if (!res.ok) throw new Error("Failed to fetch dashboard stats");
+            const data = await res.json();
+            if (data.success) {
+                animateMetricVal("metricTotalDocs", data.total_documents || 0);
+                animateMetricVal("metricProcessedDocs", data.processed || 0);
+                animateMetricVal("metricProcessingDocs", data.processing || 0);
+                animateMetricVal("metricFailedDocs", data.failed || 0);
+            }
+        } catch (err) {
+            console.error("Dashboard stats error:", err);
+        }
+    }
+
+    /* --------------------------------------------------------------------------
+       2. Document Volume Chart (Real Dates, No Duplicates, Full-width Bars)
+       -------------------------------------------------------------------------- */
+    async function loadVolumeChart(period = "30") {
+        const canvas = document.getElementById("volumeChart");
+        const emptyState = document.getElementById("volumeEmptyState");
+        if (!canvas) return;
+
+        try {
+            const res = await fetch(`/api/dashboard/upload-activity?period=${encodeURIComponent(period)}`, {
+                headers: { "Accept": "application/json" },
+                credentials: "same-origin"
+            });
+            if (!res.ok) throw new Error("Failed to fetch volume data");
+            const data = await res.json();
+
+            if (volumeChartInstance) {
+                volumeChartInstance.destroy();
+                volumeChartInstance = null;
+            }
+
+            if (!data.success || data.empty || !data.labels || data.labels.length === 0) {
+                canvas.style.display = "none";
+                if (emptyState) emptyState.style.display = "flex";
+                return;
+            }
+
+            canvas.style.display = "block";
+            if (emptyState) emptyState.style.display = "none";
+
+            const theme = getChartThemeColors();
+            const ctx = canvas.getContext("2d");
+
+            // Gradient for bar fill
+            const gradient = ctx.createLinearGradient(0, 0, 0, 270);
+            gradient.addColorStop(0, theme.primary);
+            gradient.addColorStop(1, theme.primaryLight);
+
+            volumeChartInstance = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: "Documents Uploaded",
+                        data: data.counts,
+                        backgroundColor: gradient,
+                        borderColor: theme.primary,
+                        borderWidth: 1.5,
+                        borderRadius: 6,
+                        maxBarThickness: 38,
+                        minBarLength: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 8,
+                            right: 12,
+                            bottom: 6,
+                            left: 4
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: theme.tooltipBg,
+                            titleColor: theme.textColor,
+                            bodyColor: theme.textColor,
+                            borderColor: theme.borderColor,
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: (ctx) => `${ctx.parsed.y} document${ctx.parsed.y === 1 ? '' : 's'}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: theme.textMuted,
+                                font: { size: 11, family: "inherit", weight: "500" },
+                                maxRotation: 0,
+                                minRotation: 0
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: theme.gridColor },
+                            ticks: {
+                                color: theme.textMuted,
+                                stepSize: 1,
+                                precision: 0,
+                                font: { size: 11, family: "inherit" }
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (err) {
+            console.error("Volume chart error:", err);
+            canvas.style.display = "none";
+            if (emptyState) emptyState.style.display = "flex";
+        }
+    }
+
+    /* --------------------------------------------------------------------------
+       3. Document Types Chart (Larger Prominent Donut + Intelligent Legend)
+       -------------------------------------------------------------------------- */
+    async function loadTypeChart() {
+        const canvas = document.getElementById("typeChart");
+        const emptyState = document.getElementById("typeEmptyState");
+        const badge = document.getElementById("typesTotalBadge");
+        if (!canvas) return;
+
+        try {
+            const res = await fetch("/api/dashboard/document-types", {
+                headers: { "Accept": "application/json" },
+                credentials: "same-origin"
+            });
+            if (!res.ok) throw new Error("Failed to fetch document types");
+            const data = await res.json();
+
+            if (typeChartInstance) {
+                typeChartInstance.destroy();
+                typeChartInstance = null;
+            }
+
+            if (!data.success || data.empty || !data.labels || data.labels.length === 0) {
+                canvas.style.display = "none";
+                if (emptyState) emptyState.style.display = "flex";
+                if (badge) badge.style.display = "none";
+                return;
+            }
+
+            canvas.style.display = "block";
+            if (emptyState) emptyState.style.display = "none";
+            if (badge) {
+                badge.style.display = "inline-flex";
+                badge.textContent = `${data.labels.length} TYPE${data.labels.length === 1 ? '' : 'S'}`;
+            }
+
+            const theme = getChartThemeColors();
+            const palette = [
+                theme.primary,
+                theme.accent,
+                theme.success,
+                theme.warning,
+                "#8B5CF6",
+                "#EC4899",
+                "#F97316",
+                "#64748B"
+            ];
+
+            // If there are more than 4 document types, intelligently group into top 4 + Other
+            let chartLabels = [...data.labels];
+            let chartCounts = [...data.counts];
+            if (chartLabels.length > 4) {
+                const topLabels = chartLabels.slice(0, 4);
+                const topCounts = chartCounts.slice(0, 4);
+                const otherSum = chartCounts.slice(4).reduce((acc, v) => acc + v, 0);
+                topLabels.push("Other");
+                topCounts.push(otherSum);
+                chartLabels = topLabels;
+                chartCounts = topCounts;
+            }
+
+            const ctx = canvas.getContext("2d");
+            typeChartInstance = new Chart(ctx, {
+                type: "doughnut",
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        data: chartCounts,
+                        backgroundColor: palette.slice(0, chartLabels.length),
+                        borderColor: theme.cardBg,
+                        borderWidth: 3,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: "58%", // Substantial, prominent ring thickness
+                    layout: {
+                        padding: {
+                            top: 4,
+                            bottom: 4,
+                            left: 8,
+                            right: 8
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: "bottom",
+                            labels: {
+                                color: theme.textColor,
+                                boxWidth: 12,
+                                padding: 10,
+                                font: { size: 11, family: "inherit", weight: "500" }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: theme.tooltipBg,
+                            titleColor: theme.textColor,
+                            bodyColor: theme.textColor,
+                            borderColor: theme.borderColor,
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                label: (ctx) => {
+                                    const total = data.total || 1;
+                                    const count = ctx.parsed;
+                                    const pct = Math.round((count / total) * 100);
+                                    return ` ${ctx.label}: ${count} doc${count === 1 ? '' : 's'} (${pct}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (err) {
+            console.error("Type chart error:", err);
+            canvas.style.display = "none";
+            if (emptyState) emptyState.style.display = "flex";
+        }
+    }
+
+    /* --------------------------------------------------------------------------
+       4. Confidence Analytics Chart (Doc 1..N Horizontal, Tooltip on Hover, Real Scale)
+       -------------------------------------------------------------------------- */
+    async function loadConfidenceChart() {
+        const canvas = document.getElementById("confidenceChart");
+        const emptyState = document.getElementById("confidenceEmptyState");
+        const badge = document.getElementById("avgConfidenceBadge");
+        if (!canvas) return;
+
+        try {
+            const res = await fetch("/api/dashboard/confidence", {
+                headers: { "Accept": "application/json" },
+                credentials: "same-origin"
+            });
+            if (!res.ok) throw new Error("Failed to fetch confidence data");
+            const data = await res.json();
+
+            if (confidenceChartInstance) {
+                confidenceChartInstance.destroy();
+                confidenceChartInstance = null;
+            }
+
+            if (!data.success || data.empty || !data.values || data.values.length === 0) {
+                canvas.style.display = "none";
+                if (emptyState) emptyState.style.display = "flex";
+                if (badge) badge.style.display = "none";
+                return;
+            }
+
+            canvas.style.display = "block";
+            if (emptyState) emptyState.style.display = "none";
+            if (badge) {
+                badge.style.display = "inline-flex";
+                badge.textContent = `AVG ${data.average}%`;
+            }
+
+            const theme = getChartThemeColors();
+            const ctx = canvas.getContext("2d");
+
+            // Build gradient for area fill
+            const gradient = ctx.createLinearGradient(0, 0, 0, 270);
+            gradient.addColorStop(0, "rgba(16, 185, 129, 0.28)");
+            gradient.addColorStop(1, "rgba(16, 185, 129, 0.0)");
+
+            // Dynamic scale: Never distort data, start at meaningful step based on real min
+            const minConf = Math.min(...data.values);
+            let yMin = Math.floor(minConf / 10) * 10;
+            if (minConf >= 90) {
+                yMin = 80; // 80%, 85%, 90%, 95%, 100%
+            } else if (yMin > 0 && (minConf - yMin < 3)) {
+                yMin = Math.max(0, yMin - 10);
+            }
+            yMin = Math.max(0, Math.min(yMin, 90));
+            const yStep = (100 - yMin) <= 20 ? 5 : 10;
+
+            // Simplified X-axis labels strictly as Doc 1, Doc 2, Doc 3 (Option A)
+            const cleanLabels = data.values.map((_, i) => `Doc ${i + 1}`);
+
+            confidenceChartInstance = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: cleanLabels,
+                    datasets: [{
+                        label: "Confidence (%)",
+                        data: data.values,
+                        borderColor: theme.success,
+                        backgroundColor: gradient,
+                        borderWidth: 2.5,
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: theme.success,
+                        pointBorderColor: theme.cardBg,
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        pointHitRadius: 12
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 8,
+                            right: 12,
+                            bottom: 6,
+                            left: 4
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: theme.tooltipBg,
+                            titleColor: theme.textColor,
+                            bodyColor: theme.textColor,
+                            borderColor: theme.borderColor,
+                            borderWidth: 1,
+                            padding: 10,
+                            boxPadding: 4,
+                            callbacks: {
+                                title: (items) => {
+                                    const idx = items[0].dataIndex;
+                                    return (data.filenames && data.filenames[idx]) || `Document #${idx + 1}`;
+                                },
+                                label: (ctx) => {
+                                    const idx = ctx.dataIndex;
+                                    const docType = (data.document_types && data.document_types[idx]) || "Document";
+                                    const dateStr = (data.dates && data.dates[idx]) ? ` • ${data.dates[idx]}` : "";
+                                    return `Confidence: ${ctx.parsed.y}% (${docType}${dateStr})`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: theme.textMuted,
+                                font: { size: 11, family: "inherit", weight: "600" },
+                                maxRotation: 0,
+                                minRotation: 0 // Keep strictly horizontal, never tilt
+                            }
+                        },
+                        y: {
+                            min: yMin,
+                            max: 100,
+                            grid: { color: theme.gridColor },
+                            ticks: {
+                                color: theme.textMuted,
+                                font: { size: 11, family: "inherit" },
+                                stepSize: yStep,
+                                callback: (v) => `${v}%`
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (err) {
+            console.error("Confidence chart error:", err);
+            canvas.style.display = "none";
+            if (emptyState) emptyState.style.display = "flex";
+        }
+    }
+
+    /* --------------------------------------------------------------------------
+       5. Recent Documents Table (Real Records from DB)
+       -------------------------------------------------------------------------- */
+    async function loadRecentDocuments() {
+        const tbody = document.getElementById("dashboardRecentTable");
+        if (!tbody) return;
+
+        try {
+            const res = await fetch("/api/dashboard/recent-documents?limit=8", {
+                headers: { "Accept": "application/json" },
+                credentials: "same-origin"
+            });
+            if (!res.ok) throw new Error("Failed to fetch recent documents");
+            const data = await res.json();
+
+            if (!data.success || data.empty || !data.documents || data.documents.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-table-state">
+                                <i class="fa-solid fa-folder-open"></i>
+                                <h4>No Documents Found</h4>
+                                <p>You haven't processed any documents yet. Get started by uploading your first document.</p>
+                                <a href="/upload" class="btn btn-primary btn-sm">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i> Upload Document
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            // Update View Results quick action button to the latest completed result
+            const latestCompleted = data.documents.find(d => d.status === "Completed" || d.status === "completed" || d.status === "success");
+            const viewResultsBtn = document.getElementById("viewLatestResultsBtn");
+            if (viewResultsBtn && latestCompleted) {
+                viewResultsBtn.href = latestCompleted.result_url;
+            }
+
+            tbody.innerHTML = data.documents.map(doc => {
+                const st = (doc.status || "Completed").toLowerCase();
+                let statusBadge = `<span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> Processed</span>`;
+                if (st.includes("processing") || st.includes("started") || st.includes("pending") || st.includes("queued")) {
+                    statusBadge = `<span class="badge badge-warning"><i class="fa-solid fa-spinner fa-spin"></i> Processing</span>`;
+                } else if (st.includes("fail") || st.includes("error")) {
+                    statusBadge = `<span class="badge badge-danger"><i class="fa-solid fa-circle-xmark"></i> Failed</span>`;
+                }
+
+                const confVal = doc.confidence || 0;
+                let confClass = "";
+                if (confVal < 70) confClass = "danger";
+                else if (confVal < 85) confClass = "warning";
+
+                const ext = (doc.file_type || doc.filename.split('.').pop() || "").toUpperCase();
+                let fileIcon = "fa-file-lines";
+                if (ext === "PDF") fileIcon = "fa-file-pdf";
+                else if (["PNG", "JPG", "JPEG", "WEBP", "TIFF", "BMP"].includes(ext)) fileIcon = "fa-file-image";
+
+                return `
+                    <tr style="border-bottom: 1px solid var(--card-border);">
+                        <td style="padding: 14px 16px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <i class="fa-solid ${fileIcon}" style="color: var(--primary); font-size: 1.15rem;"></i>
+                                <div>
+                                    <div style="font-weight: 600; color: var(--text-main);">${escapeHtml(doc.filename)}</div>
+                                    <small style="color: var(--text-muted); font-size: 0.75rem;">${escapeHtml(doc.job_id)}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding: 14px 16px;">
+                            <span class="badge badge-primary">${escapeHtml(doc.document_type || "General Document")}</span>
+                        </td>
+                        <td style="padding: 14px 16px; color: var(--text-muted); font-size: 0.88rem;">
+                            ${escapeHtml(doc.created_at)}
+                        </td>
+                        <td style="padding: 14px 16px;">
+                            ${statusBadge}
+                        </td>
+                        <td style="padding: 14px 16px;">
+                            <div class="confidence-bar-wrap">
+                                <span style="font-weight: 600; font-size: 0.88rem; min-width: 44px;">${escapeHtml(doc.confidence_score)}</span>
+                                <div class="confidence-bar-track">
+                                    <div class="confidence-bar-fill ${confClass}" style="width: ${Math.min(100, Math.max(0, confVal))}%;"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding: 14px 16px; text-align: right;">
+                            <a href="${doc.result_url}" class="btn btn-outline btn-sm" title="View Full Document Analysis">
+                                <i class="fa-solid fa-eye"></i> View Result
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+        } catch (err) {
+            console.error("Recent documents error:", err);
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; color: var(--danger); padding: 30px;">
+                        <i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px;"></i> Unable to load document activity from database.
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    /* --------------------------------------------------------------------------
+       Helpers: Animation, Escaping, Theme Color Resolution
+       -------------------------------------------------------------------------- */
+    function animateMetricVal(id, target) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const numTarget = parseInt(target, 10) || 0;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || numTarget === 0) {
+            el.textContent = numTarget.toLocaleString();
+            return;
+        }
+        const duration = 750;
+        const startTime = performance.now();
+        function tick(now) {
+            const progress = Math.min((now - startTime) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            el.textContent = Math.round(numTarget * eased).toLocaleString();
+            if (progress < 1) requestAnimationFrame(tick);
+            else el.textContent = numTarget.toLocaleString();
+        }
+        requestAnimationFrame(tick);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return "";
+        const div = document.createElement("div");
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function getChartThemeColors() {
+        const style = getComputedStyle(document.body);
+        const isDark = document.body.getAttribute("data-theme") === "dark" ||
+                       document.documentElement.getAttribute("data-theme") === "dark";
+
+        const primary = style.getPropertyValue("--primary").trim() || "#2563EB";
+        const accent = style.getPropertyValue("--accent").trim() || "#06B6D4";
+        const success = style.getPropertyValue("--success").trim() || "#10B981";
+        const warning = style.getPropertyValue("--warning").trim() || "#F59E0B";
+        const danger = style.getPropertyValue("--danger").trim() || "#EF4444";
+        const textColor = style.getPropertyValue("--text-main").trim() || (isDark ? "#F8FAFC" : "#0F172A");
+        const textMuted = style.getPropertyValue("--text-muted").trim() || (isDark ? "#94A3B8" : "#64748B");
+        const cardBg = style.getPropertyValue("--card-bg").trim() || (isDark ? "#1E293B" : "#FFFFFF");
+        const borderColor = style.getPropertyValue("--card-border").trim() || (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)");
+        const gridColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)";
+        const tooltipBg = isDark ? "#0F172A" : "#FFFFFF";
+
+        return {
+            primary,
+            primaryLight: isDark ? "rgba(37, 99, 235, 0.15)" : "rgba(37, 99, 235, 0.1)",
+            accent,
+            success,
+            warning,
+            danger,
+            textColor,
+            textMuted,
+            cardBg,
+            borderColor,
+            gridColor,
+            tooltipBg
+        };
+    }
+</script>
+{% endblock %}

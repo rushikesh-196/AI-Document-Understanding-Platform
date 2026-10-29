@@ -1,0 +1,967 @@
+/* ==========================================================================
+   AI Document Intelligence Platform — Animations & Micro-Interactions
+   All animations use transform/opacity only for GPU-composited performance.
+   Includes full prefers-reduced-motion support.
+   ========================================================================== */
+
+/* ==========================================================================
+   1. KEYFRAME LIBRARY
+   ========================================================================== */
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInLeft {
+    from { opacity: 0; transform: translateX(-24px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeInRight {
+    from { opacity: 0; transform: translateX(24px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.92); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes scaleInBounce {
+    0%   { opacity: 0; transform: scale(0.85); }
+    70%  { opacity: 1; transform: scale(1.04); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+    0%   { background-position: -600px 0; }
+    100% { background-position: 600px 0; }
+}
+
+@keyframes skeletonWave {
+    0%   { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+}
+
+@keyframes spinnerRing {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes aiPulse {
+    0%, 100% { opacity: 0.35; transform: scale(0.92); }
+    50%       { opacity: 1;    transform: scale(1.08); }
+}
+
+@keyframes aiDotBounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+    40%            { transform: translateY(-7px); opacity: 1; }
+}
+
+@keyframes rippleExpand {
+    from { transform: scale(0); opacity: 0.55; }
+    to   { transform: scale(4); opacity: 0; }
+}
+
+@keyframes successPop {
+    0%   { transform: scale(0.5); opacity: 0; }
+    60%  { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes errorShake {
+    0%, 100% { transform: translateX(0); }
+    20%       { transform: translateX(-8px); }
+    40%       { transform: translateX(8px); }
+    60%       { transform: translateX(-5px); }
+    80%       { transform: translateX(5px); }
+}
+
+@keyframes floatBob {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-10px); }
+}
+
+@keyframes navIndicatorSlide {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+}
+
+@keyframes progressShimmer {
+    0%   { background-position: -300% 0; }
+    100% { background-position: 300% 0; }
+}
+
+@keyframes logoPulse {
+    0%, 100% { box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+    50%       { box-shadow: 0 4px 22px rgba(37, 99, 235, 0.6); }
+}
+
+@keyframes counterTick {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toastSlideIn {
+    from { opacity: 0; transform: translateX(50px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toastFadeOut {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(50px); }
+}
+
+@keyframes modalBackdropIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes modalContentIn {
+    from { opacity: 0; transform: scale(0.93) translateY(16px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes tabPaneFade {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dropzoneRipple {
+    0%   { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.25); }
+    100% { box-shadow: 0 0 0 16px rgba(37, 99, 235, 0); }
+}
+
+@keyframes queueCardIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ==========================================================================
+   2. PAGE LOAD — Body fade-in
+   ========================================================================== */
+
+body {
+    opacity: 0;
+    transition: opacity 0.35s ease-out;
+}
+
+body.page-loaded {
+    opacity: 1;
+}
+
+/* ==========================================================================
+   3. SCROLL-REVEAL SYSTEM
+   ========================================================================== */
+
+.reveal {
+    opacity: 0;
+    transform: translateY(22px);
+    transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.reveal-left {
+    opacity: 0;
+    transform: translateX(-22px);
+    transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-left.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.reveal-right {
+    opacity: 0;
+    transform: translateX(22px);
+    transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-right.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.reveal-scale {
+    opacity: 0;
+    transform: scale(0.94);
+    transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-scale.visible {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Stagger delays for child elements */
+.stagger-children > *:nth-child(1) { transition-delay: 0ms; }
+.stagger-children > *:nth-child(2) { transition-delay: 75ms; }
+.stagger-children > *:nth-child(3) { transition-delay: 150ms; }
+.stagger-children > *:nth-child(4) { transition-delay: 225ms; }
+.stagger-children > *:nth-child(5) { transition-delay: 300ms; }
+.stagger-children > *:nth-child(6) { transition-delay: 375ms; }
+.stagger-children > *:nth-child(7) { transition-delay: 450ms; }
+.stagger-children > *:nth-child(8) { transition-delay: 525ms; }
+
+/* ==========================================================================
+   4. NAVBAR — Scroll shadow enhancement
+   ========================================================================== */
+
+.navbar-header {
+    transition: box-shadow 0.3s ease, background 0.3s ease;
+}
+
+.navbar-header.scrolled {
+    box-shadow: 0 4px 24px -4px rgba(15, 23, 42, 0.1);
+}
+
+[data-theme="dark"] .navbar-header.scrolled {
+    box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.4);
+}
+
+/* Logo hover pulse */
+.logo-icon {
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.25s ease;
+}
+
+.nav-logo:hover .logo-icon {
+    transform: scale(1.12) rotate(-4deg);
+    animation: logoPulse 1.5s ease-in-out infinite;
+}
+
+/* Nav link active indicator */
+.nav-link {
+    position: relative;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: var(--primary);
+    border-radius: 2px;
+    transform: translateX(-50%);
+    transition: width 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+    width: calc(100% - 16px);
+}
+
+/* Mobile drawer smooth spring */
+.mobile-drawer {
+    transition: transform 0.38s cubic-bezier(0.34, 1.22, 0.64, 1),
+                right 0.38s cubic-bezier(0.34, 1.22, 0.64, 1);
+}
+
+/* Mobile nav list items stagger */
+.mobile-nav-list .nav-link {
+    transition: background var(--transition), color var(--transition),
+                transform 0.2s ease;
+}
+
+.mobile-nav-list .nav-link:hover {
+    transform: translateX(4px);
+}
+
+/* ==========================================================================
+   5. BUTTON MICRO-INTERACTIONS
+   ========================================================================== */
+
+.btn {
+    overflow: hidden;
+    position: relative;
+    transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+.btn:active {
+    transform: scale(0.96) translateY(1px) !important;
+}
+
+/* Ripple element (injected by JS) */
+.btn-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.35);
+    pointer-events: none;
+    animation: rippleExpand 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    transform-origin: center;
+}
+
+/* Primary button shimmer */
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    transition: left 0.5s ease;
+    pointer-events: none;
+}
+
+.btn-primary:hover::before {
+    left: 150%;
+}
+
+/* ==========================================================================
+   6. CARD HOVER ANIMATIONS
+   ========================================================================== */
+
+.glass-card,
+.saas-card {
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 0.28s ease !important;
+}
+
+.glass-card:hover,
+.saas-card:hover {
+    transform: translateY(-3px);
+}
+
+.feature-card {
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 0.28s ease !important;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px) !important;
+}
+
+.feature-icon-box {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                background 0.25s ease;
+}
+
+.feature-card:hover .feature-icon-box {
+    transform: scale(1.12) rotate(-5deg);
+    background: var(--primary);
+    color: #fff;
+}
+
+.metric-card {
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.28s ease !important;
+    cursor: default;
+}
+
+.metric-card:hover {
+    transform: translateY(-3px);
+}
+
+.metric-icon-box {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.metric-card:hover .metric-icon-box {
+    transform: scale(1.15) rotate(-6deg);
+}
+
+.action-card {
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.28s ease !important;
+}
+
+.action-card:hover {
+    transform: translateY(-3px);
+}
+
+/* Process steps */
+.process-step {
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.28s ease,
+                border-color 0.25s ease;
+}
+
+.process-step:hover {
+    transform: translateY(-4px);
+    border-color: var(--primary);
+    box-shadow: var(--shadow-hover);
+}
+
+/* Document type list items */
+.document-type-list li {
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 0.22s ease,
+                box-shadow 0.22s ease;
+}
+
+.document-type-list li:hover {
+    transform: translateX(4px);
+    border-color: var(--primary);
+    box-shadow: 0 2px 10px rgba(37, 99, 235, 0.1);
+}
+
+/* Entity cards */
+.entity-card {
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 0.22s ease,
+                box-shadow 0.22s ease !important;
+}
+
+.entity-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.1);
+}
+
+/* ==========================================================================
+   7. UPLOAD DROPZONE ANIMATIONS
+   ========================================================================== */
+
+.upload-dropzone {
+    transition: border-color 0.25s ease,
+                background 0.25s ease,
+                transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.25s ease !important;
+}
+
+.upload-dropzone:hover {
+    transform: scale(1.008);
+}
+
+.upload-dropzone.dragover {
+    transform: scale(1.015) !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2),
+                0 8px 32px rgba(37, 99, 235, 0.15);
+    animation: dropzoneRipple 1s ease-in-out infinite;
+}
+
+.dropzone-icon {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.upload-dropzone:hover .dropzone-icon,
+.upload-dropzone.dragover .dropzone-icon {
+    transform: scale(1.18) translateY(-4px);
+}
+
+/* Queue cards animate in */
+.queue-card-anim {
+    animation: queueCardIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ==========================================================================
+   8. AI PROCESSING ANIMATIONS
+   ========================================================================== */
+
+/* Spinning ring */
+.ai-spinner-ring {
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+    border: 3px solid rgba(37, 99, 235, 0.15);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spinnerRing 0.8s linear infinite;
+}
+
+.ai-spinner-ring.sm {
+    width: 20px;
+    height: 20px;
+    border-width: 2px;
+}
+
+/* AI pulsing dots */
+.ai-processing-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ai-processing-dots span {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--primary);
+    animation: aiDotBounce 1.3s ease-in-out infinite;
+}
+
+.ai-processing-dots span:nth-child(2) { animation-delay: 0.15s; }
+.ai-processing-dots span:nth-child(3) { animation-delay: 0.30s; }
+
+/* Processing overlay for pipeline */
+.pipeline-fill {
+    background: linear-gradient(
+        90deg,
+        var(--primary) 0%,
+        var(--accent) 50%,
+        var(--primary) 100%
+    ) !important;
+    background-size: 200% 100% !important;
+    animation: progressShimmer 1.8s linear infinite;
+    transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+/* Stage item pulse when active */
+.stage-item.active .stage-icon {
+    animation: aiPulse 1.2s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   9. SKELETON / SHIMMER LOADING
+   ========================================================================== */
+
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--background-alt) 25%,
+        var(--card-border) 50%,
+        var(--background-alt) 75%
+    );
+    background-size: 400px 100%;
+    animation: skeletonWave 1.4s ease-in-out infinite;
+    border-radius: var(--radius-sm);
+    color: transparent !important;
+    pointer-events: none;
+    user-select: none;
+}
+
+.skeleton * { visibility: hidden; }
+
+.skeleton-text {
+    height: 14px;
+    border-radius: 4px;
+    background: linear-gradient(
+        90deg,
+        var(--background-alt) 25%,
+        var(--card-border) 50%,
+        var(--background-alt) 75%
+    );
+    background-size: 400px 100%;
+    animation: skeletonWave 1.4s ease-in-out infinite;
+    margin-bottom: 8px;
+}
+
+.skeleton-text.w-3\/4 { width: 75%; }
+.skeleton-text.w-1\/2 { width: 50%; }
+.skeleton-text.w-1\/4 { width: 25%; }
+
+.skeleton-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.skeleton-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(
+        90deg,
+        var(--background-alt) 25%,
+        var(--card-border) 50%,
+        var(--background-alt) 75%
+    );
+    background-size: 400px 100%;
+    animation: skeletonWave 1.4s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+/* ==========================================================================
+   10. TOAST NOTIFICATIONS ENHANCED
+   ========================================================================== */
+
+.toast {
+    animation: toastSlideIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+}
+
+.toast.toast-exit {
+    animation: toastFadeOut 0.28s ease forwards !important;
+}
+
+/* Toast hover pause */
+.toast:hover {
+    transform: translateX(-4px);
+    transition: transform 0.2s ease;
+}
+
+/* ==========================================================================
+   11. MODAL / DIALOG ANIMATIONS
+   ========================================================================== */
+
+.modal-backdrop {
+    animation: modalBackdropIn 0.25s ease forwards;
+}
+
+.modal-content,
+.modal .glass-card,
+.modal .saas-card {
+    animation: modalContentIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.modal.closing .modal-content,
+.modal.closing .glass-card {
+    animation: none;
+    opacity: 0;
+    transform: scale(0.93) translateY(16px);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+/* ==========================================================================
+   12. TAB TRANSITIONS
+   ========================================================================== */
+
+.tab-pane {
+    animation: tabPaneFade 0.22s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+.auth-tab {
+    transition: background 0.22s ease, color 0.22s ease,
+                box-shadow 0.22s ease, transform 0.15s ease !important;
+}
+
+.auth-tab:hover:not(.active) {
+    transform: translateY(-1px);
+}
+
+.auth-tab.active {
+    transform: none;
+}
+
+.result-tab-btn {
+    transition: color 0.22s ease, background 0.22s ease,
+                border-color 0.22s ease, transform 0.15s ease !important;
+}
+
+.result-tab-btn:hover:not(.active) {
+    transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   13. FORM CONTROLS INTERACTION
+   ========================================================================== */
+
+.form-control {
+    transition: border-color 0.22s ease, box-shadow 0.22s ease,
+                transform 0.15s ease !important;
+}
+
+.form-control:focus {
+    transform: scale(1.005);
+}
+
+/* Search field animation */
+.form-control[type="search"]:focus,
+.form-control[type="text"]:focus {
+    transform: scale(1.005);
+}
+
+/* ==========================================================================
+   14. EMPTY STATE ANIMATIONS
+   ========================================================================== */
+
+.results-empty-state,
+.empty-state {
+    animation: fadeInUp 0.45s ease forwards;
+}
+
+.empty-state-icon,
+.results-empty-state i {
+    display: inline-block;
+    animation: floatBob 3s ease-in-out infinite;
+    color: var(--text-light);
+    font-size: 2.5rem;
+    margin-bottom: 16px;
+}
+
+/* ==========================================================================
+   15. COUNTER ANIMATIONS
+   ========================================================================== */
+
+.metric-val {
+    transition: opacity 0.2s ease;
+}
+
+.metric-val.counting {
+    animation: counterTick 0.1s ease;
+}
+
+/* ==========================================================================
+   16. SAAS TABLE ROW HOVER
+   ========================================================================== */
+
+.saas-table tbody tr {
+    transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.saas-table tbody tr:hover td {
+    background: var(--primary-light) !important;
+}
+
+/* ==========================================================================
+   17. FOOTER LINKS
+   ========================================================================== */
+
+.footer-links a {
+    position: relative;
+    transition: color 0.22s ease;
+}
+
+.footer-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: var(--primary);
+    transition: width 0.22s ease;
+}
+
+.footer-links a:hover::after {
+    width: 100%;
+}
+
+/* ==========================================================================
+   18. DASHBOARD / OVERVIEW SECTION
+   ========================================================================== */
+
+.dashboard-header {
+    animation: fadeInDown 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Hero section staggered entrance */
+.hero-badge {
+    animation: fadeInDown 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+.hero-title {
+    animation: fadeInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+}
+
+.hero-subtitle {
+    animation: fadeInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.32s both;
+}
+
+.hero-actions {
+    animation: fadeInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.44s both;
+}
+
+.hero-preview-card {
+    animation: scaleIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
+}
+
+/* Graphic steps stagger */
+.graphic-step {
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.graphic-step:hover {
+    transform: translateX(4px);
+    box-shadow: var(--card-shadow);
+}
+
+/* ==========================================================================
+   19. THEME TOGGLE ANIMATION
+   ========================================================================== */
+
+.theme-toggle {
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+                background 0.22s ease,
+                border-color 0.22s ease,
+                color 0.22s ease !important;
+}
+
+.theme-toggle:hover {
+    transform: scale(1.1) rotate(12deg);
+}
+
+.theme-toggle:active {
+    transform: scale(0.9) rotate(-12deg);
+}
+
+.theme-toggle i {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ==========================================================================
+   20. USER DROPDOWN ANIMATION
+   ========================================================================== */
+
+.user-dropdown {
+    transform-origin: top right;
+    animation: scaleIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+.user-menu-btn {
+    transition: border-color 0.22s ease, transform 0.2s ease,
+                box-shadow 0.22s ease !important;
+}
+
+.user-menu-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 2px 12px rgba(37, 99, 235, 0.12);
+}
+
+.dropdown-item {
+    transition: background 0.18s ease, color 0.18s ease,
+                transform 0.15s ease !important;
+}
+
+.dropdown-item:hover {
+    transform: translateX(3px);
+}
+
+/* ==========================================================================
+   21. SUCCESS / ERROR FEEDBACK
+   ========================================================================== */
+
+.anim-success {
+    animation: successPop 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.anim-error {
+    animation: errorShake 0.45s ease forwards;
+}
+
+/* ==========================================================================
+   22. BADGE ANIMATION
+   ========================================================================== */
+
+.badge {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.badge:hover {
+    transform: scale(1.05);
+}
+
+/* ==========================================================================
+   23. CTA SECTION
+   ========================================================================== */
+
+.cta-card {
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.cta-card:hover {
+    box-shadow: var(--shadow-hover);
+}
+
+/* ==========================================================================
+   24. BENEFIT ITEMS
+   ========================================================================== */
+
+.benefit-item {
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.25s ease,
+                border-color 0.25s ease;
+}
+
+.benefit-item:hover {
+    transform: translateX(5px);
+    box-shadow: 4px 0 16px rgba(37, 99, 235, 0.08);
+    border-left-color: var(--accent);
+}
+
+/* ==========================================================================
+   25. SELECTED FILE CARD
+   ========================================================================== */
+
+.selected-file-card {
+    animation: scaleIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ==========================================================================
+   26. REDUCED MOTION — Respect user preference
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    body { opacity: 1 !important; }
+
+    .reveal,
+    .reveal-left,
+    .reveal-right,
+    .reveal-scale {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+
+    .hero-badge,
+    .hero-title,
+    .hero-subtitle,
+    .hero-actions,
+    .hero-preview-card,
+    .dashboard-header {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    .ai-spinner-ring {
+        animation: none !important;
+        border-color: var(--primary) !important;
+    }
+
+    .ai-processing-dots span {
+        animation: none !important;
+        opacity: 1 !important;
+    }
+
+    .pipeline-fill {
+        animation: none !important;
+        background: var(--primary) !important;
+    }
+
+    .skeleton,
+    .skeleton-text,
+    .skeleton-circle {
+        animation: none !important;
+        background: var(--background-alt) !important;
+    }
+
+    .empty-state-icon,
+    .results-empty-state i {
+        animation: none !important;
+    }
+
+    .logo-icon,
+    .feature-icon-box,
+    .metric-icon-box,
+    .theme-toggle {
+        transform: none !important;
+        animation: none !important;
+    }
+
+    .btn-primary::before { display: none; }
+    .nav-link::after { transition: none; }
+    .footer-links a::after { transition: none; }
+}

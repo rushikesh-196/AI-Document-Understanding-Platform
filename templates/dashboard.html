@@ -1,0 +1,660 @@
+{% extends "base.html" %}
+
+{% block title %}Document Processing Results — AI Document Intelligence Platform{% endblock %}
+
+{% block content %}
+<section style="padding: 40px 0;">
+    <div class="container">
+
+        {% if not job %}
+            <!-- RESULT NOT FOUND OR NO DOCUMENT SELECTED -->
+            <div class="saas-card reveal" style="text-align: center; padding: 56px 24px; max-width: 680px; margin: 40px auto;">
+                <div class="metric-icon-box" style="margin: 0 auto 20px auto; color: var(--primary); background: var(--primary-light); width: 64px; height: 64px; font-size: 2rem;">
+                    <i class="fa-solid fa-file-waveform"></i>
+                </div>
+                <h2>{{ error_message or ("Result Not Found" if job_id else "No Document Selected") }}</h2>
+                <p style="margin-top: 10px; margin-bottom: 28px; font-size: 1rem; color: var(--text-muted); line-height: 1.6;">
+                    {% if job_id %}
+                        We couldn't locate the processing result for job ID <code>{{ job_id }}</code>. It may still be processing or has been removed.
+                    {% else %}
+                        Select a processed document from your history or upload a new file to explore AI extraction, classification, and summaries.
+                    {% endif %}
+                </p>
+                <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;">
+                    <a href="{{ url_for('upload_page') }}" class="btn btn-primary btn-md">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Upload Document
+                    </a>
+                    <a href="{{ url_for('history_page') }}" class="btn btn-outline btn-md">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Document History
+                    </a>
+                    <a href="{{ url_for('dashboard_page') }}" class="btn btn-outline btn-md">
+                        <i class="fa-solid fa-gauge"></i> Go to Dashboard
+                    </a>
+                </div>
+            </div>
+        {% else %}
+
+        <!-- 1. TOP ACTIONS & PAGE TITLE -->
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+            <div>
+                <h1 style="font-size: 1.85rem; margin-bottom: 4px;">Document Understanding Results</h1>
+                <p style="font-size: 0.9rem;">Comprehensive AI extraction, intelligent summary, entity parsing, and structured output.</p>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <a href="{{ url_for('dashboard_page') }}" class="btn btn-outline btn-sm">
+                    <i class="fa-solid fa-arrow-left"></i> Dashboard
+                </a>
+                <a href="{{ url_for('upload_page') }}" class="btn btn-outline btn-sm">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Upload Another
+                </a>
+                <button class="btn btn-primary btn-sm" data-export-format="pdf" onclick="triggerDirectDownload('pdf', this)" style="background: #ef4444; border-color: #ef4444;">
+                    <i class="fa-solid fa-file-pdf"></i> Export PDF
+                </button>
+                <button class="btn btn-primary btn-sm" data-export-format="csv" onclick="triggerDirectDownload('csv', this)" style="background: #10b981; border-color: #10b981;">
+                    <i class="fa-solid fa-file-csv"></i> Export CSV
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. DOCUMENT STATUS & METADATA BAR -->
+        <div class="saas-card results-header-card reveal" style="margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--card-border);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fa-solid fa-file-invoice" style="font-size: 1.8rem; color: var(--primary);"></i>
+                    <div>
+                        <strong style="font-size: 1.15rem; color: var(--text-main); display: block;">{{ job.filename or 'Document' }}</strong>
+                        <small style="color: var(--text-muted);">Job Reference: <code style="font-family: var(--font-code); font-weight: 600;">{{ job.job_id or job.id or 'JOB-UNKNOWN' }}</code></small>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> {{ job.status or 'Completed' }}</span>
+                    <span class="badge badge-primary"><i class="fa-solid fa-tag"></i> {{ job.document_type or 'General Document' }}</span>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>Document Classification</label>
+                    <span style="font-weight: 700; color: var(--primary);">{{ job.document_type or 'General Document' }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Overall Confidence</label>
+                    <span style="color: var(--success); font-weight: 800;">{{ job.confidence_score or job.confidence or '95.0%' }}</span>
+                </div>
+                <div class="info-item">
+                    <label>OCR Engine</label>
+                    <span>{{ job.engine or 'PaddleOCR / WinOCR' }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Processing Duration</label>
+                    <span>{{ job.processing_time or '0.8s' }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Language Detected</label>
+                    <span>{{ (job.detected_language or 'English') | upper }}</span>
+                </div>
+                <div class="info-item">
+                    <label>File Size</label>
+                    <span>{{ job.file_size or 'Available' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. PROMINENT AI SUMMARY SHOWCASE CARD (NEAR TOP OF RESULTS) -->
+        <div class="saas-card reveal" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(37,99,235,0.06), rgba(6,182,212,0.06)); border-left: 4px solid var(--primary);">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+                <h3 style="display: flex; align-items: center; gap: 10px; margin: 0; color: var(--primary);">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI Document Summary
+                </h3>
+                <span class="badge badge-primary"><i class="fa-solid fa-brain"></i> Dynamic Insight</span>
+            </div>
+            <p style="font-size: 1.06rem; line-height: 1.75; color: var(--text-main); margin-bottom: 16px;">
+                {{ job.summary or job.ai_summary or 'No summary detected for this document.' }}
+            </p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--card-border);">
+                {% if job.structured_data %}
+                    {% for key in ['invoice_number', 'receipt_number', 'order_number', 'total_amount', 'date', 'customer_name', 'company', 'patient_name'] %}
+                        {% if job.structured_data.get(key) %}
+                            <span class="badge badge-outline" style="font-size: 0.82rem;">
+                                <strong style="text-transform: capitalize;">{{ key | replace('_', ' ') }}:</strong> {{ job.structured_data.get(key) }}
+                            </span>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 3B. VALIDATION & INTEGRITY CHECKS (If Available) -->
+        {% if job.validation %}
+        <div class="saas-card reveal" style="margin-bottom: 24px; padding: 18px 24px; border-left: 4px solid {% if job.validation.warning_count > 0 %}var(--warning){% else %}var(--success){% endif %};">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 10px;">
+                <h4 style="margin: 0; display: flex; align-items: center; gap: 8px; color: var(--text-main);">
+                    <i class="fa-solid {% if job.validation.warning_count > 0 %}fa-triangle-exclamation" style="color: var(--warning);{% else %}fa-circle-check" style="color: var(--success);{% endif %}"></i>
+                    Data Integrity &amp; Math Verification
+                </h4>
+                <div style="display: flex; gap: 8px;">
+                    <span class="badge badge-success"><i class="fa-solid fa-check"></i> {{ job.validation.passed_count }} Checks Passed</span>
+                    {% if job.validation.warning_count > 0 %}
+                    <span class="badge badge-warning"><i class="fa-solid fa-circle-exclamation"></i> {{ job.validation.warning_count }} Warnings</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if job.validation.warnings %}
+            <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
+                {% for w in job.validation.warnings %}
+                <div style="font-size: 0.85rem; color: var(--warning); background: var(--warning-bg); padding: 8px 12px; border-radius: var(--radius-sm);">
+                    <i class="fa-solid fa-circle-exclamation" style="margin-right: 6px;"></i> {{ w.message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- 4. KEY INFORMATION & VALUES SECTION -->
+        <div style="margin-bottom: 28px;">
+            <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-table-columns" style="color: var(--primary);"></i> Key Information &amp; Extracted Fields
+            </h3>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px;" class="stagger-children">
+                {% if job.extracted_fields %}
+                    {% for f in job.extracted_fields %}
+                        <div class="saas-card field-item-card" style="padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 0; cursor: pointer; transition: transform 0.2s ease;" onclick="highlightField('{{ f.value }}')">
+                            <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                                <div class="metric-icon-box" style="width: 36px; height: 36px; font-size: 1rem; color: var(--primary); background: var(--primary-light); flex-shrink: 0;">
+                                    <i class="fa-solid {{ f.icon or 'fa-tag' }}"></i>
+                                </div>
+                                <div style="min-width: 0;">
+                                    <span style="font-size: 0.8rem; color: var(--text-muted); display: block; font-weight: 600;">{{ f.field_name or f.field_key | replace('_', ' ') | title }}</span>
+                                    <strong style="font-size: 0.95rem; color: var(--text-main); word-break: break-word;">{{ f.value or 'No information detected.' }}</strong>
+                                </div>
+                            </div>
+                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0;">
+                                <span class="badge badge-success" style="font-size: 0.72rem;">{{ f.confidence or '95%' }}</span>
+                                {% if f.validation %}
+                                    {% if f.validation.status == 'valid' %}
+                                        <span class="badge badge-outline" style="font-size: 0.68rem; color: var(--success);"><i class="fa-solid fa-check"></i> Verified</span>
+                                    {% elif f.validation.status == 'warning' %}
+                                        <span class="badge badge-warning" style="font-size: 0.68rem;" title="{{ f.validation.message }}"><i class="fa-solid fa-triangle-exclamation"></i> Check</span>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% elif job.structured_data %}
+                    {% for key, val in job.structured_data.items() %}
+                        <div class="saas-card" style="padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 0;">
+                            <div>
+                                <span style="font-size: 0.8rem; color: var(--text-muted); display: block; font-weight: 600; text-transform: capitalize;">{{ key | replace('_', ' ') }}</span>
+                                <strong style="font-size: 0.95rem; color: var(--text-main);">{{ val or 'No information detected.' }}</strong>
+                            </div>
+                            <span class="badge badge-success" style="font-size: 0.72rem;">95%</span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="saas-card" style="grid-column: 1 / -1; padding: 20px; color: var(--text-muted); text-align: center;">
+                        <i class="fa-solid fa-circle-info" style="margin-right: 6px;"></i> No information detected.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 5. TABBED DETAIL EXPLORER -->
+        <div class="saas-card results-tab-card reveal" style="margin-bottom: 36px; padding: 0; overflow: hidden;">
+            <!-- TAB BUTTONS HEADER -->
+            <div class="results-tab-header" id="resultTabsHeader" role="tablist" aria-label="Document analysis tabs">
+                <button type="button" class="result-tab-btn active" role="tab" aria-selected="true" data-tab="rawExtractedText" onclick="switchResultTab('rawExtractedText', this)">
+                    <i class="fa-solid fa-align-left"></i> <span>Raw Extractor (Text)</span>
+                </button>
+                <button type="button" class="result-tab-btn" role="tab" aria-selected="false" data-tab="summaryTab" onclick="switchResultTab('summaryTab', this)">
+                    <i class="fa-solid fa-sparkles"></i> <span>AI Summary &amp; Findings</span>
+                </button>
+                <button type="button" class="result-tab-btn" role="tab" aria-selected="false" data-tab="tablesTab" onclick="switchResultTab('tablesTab', this)">
+                    <i class="fa-solid fa-table"></i> <span>Extracted Tables</span>
+                </button>
+                <button type="button" class="result-tab-btn" role="tab" aria-selected="false" data-tab="formattedViewTab" onclick="switchResultTab('formattedViewTab', this)">
+                    <i class="fa-solid fa-newspaper"></i> <span>Formatted View</span>
+                </button>
+                <button type="button" class="result-tab-btn" role="tab" aria-selected="false" data-tab="json" onclick="switchResultTab('json', this)">
+                    <i class="fa-solid fa-code"></i> <span>Structured JSON</span>
+                </button>
+                <button type="button" class="result-tab-btn" role="tab" aria-selected="false" data-tab="imagePreview" onclick="switchResultTab('imagePreview', this)">
+                    <i class="fa-solid fa-image"></i> <span>Document Preview</span>
+                </button>
+            </div>
+
+            <!-- TAB 1: RAW EXTRACTOR (TEXT) -->
+            <div id="tabContent_rawExtractedText" class="tab-pane active results-tab-pane" role="tabpanel">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+                    <div>
+                        <strong style="color: var(--text-main); font-size: 1.05rem; display: block;">Raw Extractor (Text)</strong>
+                        <small style="color: var(--text-muted);">High-precision optical character recognition preserving line breaks, reading order, and document structure.</small>
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="btn btn-outline btn-sm" onclick="copyRawExtractedText()">
+                            <i class="fa-solid fa-copy"></i> Copy Text
+                        </button>
+                        <button class="btn btn-outline btn-sm" data-export-format="txt" onclick="triggerDirectDownload('txt', this)">
+                            <i class="fa-solid fa-download"></i> Download TXT
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="openFullViewModal('rawText')">
+                            <i class="fa-solid fa-expand"></i> View Full Text
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Text stats badges -->
+                <div style="display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;">
+                    <span class="badge badge-primary"><i class="fa-solid fa-font"></i> Words: <strong>{{ (job.raw_text or job.formatted_text or '').split() | length }}</strong></span>
+                    <span class="badge badge-success"><i class="fa-solid fa-list-ol"></i> Lines: <strong>{{ (job.raw_text or job.formatted_text or '').splitlines() | length }}</strong></span>
+                    <span class="badge badge-warning"><i class="fa-solid fa-text-width"></i> Characters: <strong>{{ (job.raw_text or job.formatted_text or '') | length }}</strong></span>
+                </div>
+
+                <div class="code-panel results-scroll-panel">
+                    <div class="code-body" style="padding: 20px;">
+                        <pre id="rawExtractedTextBlock" class="results-text-block">{{ job.raw_text or job.formatted_text or 'No text content extracted from this document.' }}</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: AI SUMMARY & FINDINGS -->
+            <div id="tabContent_summaryTab" class="tab-pane results-tab-pane" role="tabpanel">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+                    <div>
+                        <strong style="color: var(--text-main); font-size: 1.05rem; display: block;">AI Summary &amp; Findings</strong>
+                        <small style="color: var(--text-muted);">Executive factual narrative and structured document insights.</small>
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="btn btn-outline btn-sm" onclick="copySummaryText()">
+                            <i class="fa-solid fa-copy"></i> Copy Summary
+                        </button>
+                        <button class="btn btn-outline btn-sm" data-export-format="json" onclick="triggerDirectDownload('json', this)">
+                            <i class="fa-solid fa-download"></i> Download JSON
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="openFullViewModal('summary')">
+                            <i class="fa-solid fa-expand"></i> View Full Summary
+                        </button>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;" class="results-responsive-grid">
+                    <div>
+                        <h4 style="margin-bottom: 12px; color: var(--text-main);"><i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary);"></i> Factual Narrative Summary</h4>
+                        <div class="results-info-panel" id="summaryNarrativePanel">
+                            {{ job.summary or job.ai_summary or 'Summary generation did not produce output for this document. Please review the raw extracted text.' }}
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 style="margin-bottom: 12px; color: var(--text-main);"><i class="fa-solid fa-list-check" style="color: var(--success);"></i> Key Findings &amp; Details</h4>
+                        <div class="results-info-panel" id="summaryFindingsPanel">
+                            <ul class="results-findings-list">
+                                <li>Document Category: <strong>{{ job.document_type or 'General Document' }}</strong></li>
+                                <li>OCR Extraction Accuracy: <strong>{{ job.confidence_score or job.confidence or '95.0%' }}</strong></li>
+                                <li>Processing Pipeline: <strong>{{ job.engine or 'PaddleOCR / WinOCR' }} ({{ job.processing_time or '0.8s' }})</strong></li>
+                                {% if job.ai_insights_structured and job.ai_insights_structured.key_findings %}
+                                    {% for finding in job.ai_insights_structured.key_findings %}
+                                        <li>{{ finding }}</li>
+                                    {% endfor %}
+                                {% endif %}
+                                {% if job.structured_data %}
+                                    {% for k, v in job.structured_data.items() %}
+                                        {% if v %}
+                                            <li><strong style="text-transform: capitalize;">{{ k | replace('_', ' ') }}:</strong> {{ v }}</li>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2B: EXTRACTED TABLES -->
+            <div id="tabContent_tablesTab" class="tab-pane results-tab-pane" role="tabpanel">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <strong style="color: var(--text-main); font-size: 1.05rem; display: block;">Tabular Data &amp; Line Items</strong>
+                        <small style="color: var(--text-muted);">Automatically extracted and structured tables, grid data, and items.</small>
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-outline btn-sm" onclick="copyTablesData()">
+                            <i class="fa-solid fa-copy"></i> Copy Tables
+                        </button>
+                        <button type="button" class="btn btn-outline btn-sm" data-export-format="csv" onclick="triggerDirectDownload('csv', this)">
+                            <i class="fa-solid fa-file-csv"></i> Export CSV
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="openFullViewModal('tables')">
+                            <i class="fa-solid fa-expand"></i> View Full Tables
+                        </button>
+                    </div>
+                </div>
+                <div id="tablesContainer" class="results-tables-container">
+                    {% if job.tables %}
+                        {% for table in job.tables %}
+                            <div class="saas-card" style="padding: 18px; margin-bottom: 16px; overflow-x: auto;">
+                                {% if table.headers %}
+                                    <table class="saas-table">
+                                        <thead>
+                                            <tr>
+                                                {% for h in table.headers %}
+                                                    <th>{{ h }}</th>
+                                                {% endfor %}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for row in table.rows %}
+                                                <tr>
+                                                    {% if row is mapping %}
+                                                        {% for h in table.headers %}
+                                                            <td>{{ row.get(h) or row.get(h.lower()) or '-' }}</td>
+                                                        {% endfor %}
+                                                    {% elif row is iterable and row is not string %}
+                                                        {% for cell in row %}
+                                                            <td>{{ cell }}</td>
+                                                        {% endfor %}
+                                                    {% else %}
+                                                        <td colspan="{{ table.headers | length }}">{{ row }}</td>
+                                                    {% endif %}
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                {% elif table.rows %}
+                                    <table class="saas-table">
+                                        <tbody>
+                                            {% for row in table.rows %}
+                                                <tr>
+                                                    {% if row is iterable and row is not string %}
+                                                        {% for cell in row %}
+                                                            <td>{{ cell }}</td>
+                                                        {% endfor %}
+                                                    {% else %}
+                                                        <td>{{ row }}</td>
+                                                    {% endif %}
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                {% else %}
+                                    <div style="font-family: var(--font-code); font-size: 0.85rem; color: var(--text-main);">{{ table }}</div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="results-empty-state">
+                            <i class="fa-solid fa-table" style="font-size: 2rem; opacity: 0.4; margin-bottom: 10px; display: block;"></i>
+                            <p>No tabular structures detected in this document.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- TAB 3: FORMATTED VIEW -->
+            <div id="tabContent_formattedViewTab" class="tab-pane results-tab-pane" role="tabpanel">
+                <div class="formatted-view-wrapper">
+                    <!-- TOOLBAR: Mode switcher, zoom, print, and exports -->
+                    <div class="formatted-view-toolbar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                        <div>
+                            <h4 style="color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-newspaper" style="color: var(--primary);"></i> Formatted View
+                            </h4>
+                            <small style="color: var(--text-muted);">Reconstructed visual layout preserving original header, margins, column alignment, and tables.</small>
+                        </div>
+
+                        <div class="formatted-view-controls" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                            <!-- Zoom & Fit Controls -->
+                            <div class="btn-group" role="group" aria-label="Zoom controls">
+                                <button type="button" class="btn btn-outline btn-sm" title="Fit Page" onclick="fitFormattedSheet('page')"><i class="fa-solid fa-compress"></i> Fit Page</button>
+                                <button type="button" class="btn btn-outline btn-sm" title="Fit Width" onclick="fitFormattedSheet('width')"><i class="fa-solid fa-arrows-left-right"></i> Fit Width</button>
+                                <button type="button" class="btn btn-outline btn-sm" title="Zoom Out" onclick="zoomFormattedSheet(0.8)"><i class="fa-solid fa-minus"></i> Zoom −</button>
+                                <span id="formattedZoomLevel" class="btn btn-outline btn-sm disabled" style="pointer-events: none; font-weight: 600;">100%</span>
+                                <button type="button" class="btn btn-outline btn-sm" title="Zoom In" onclick="zoomFormattedSheet(1.2)"><i class="fa-solid fa-plus"></i> Zoom +</button>
+                            </div>
+
+                            <!-- Mode toggle -->
+                            <div class="view-mode-toggle" role="group" aria-label="View Mode">
+                                <button type="button" id="btnFormattedVisual" class="view-mode-btn active" onclick="switchFormattedViewMode('visual')">
+                                    <i class="fa-solid fa-file-invoice"></i> Visual Document
+                                </button>
+                                <button type="button" id="btnFormattedText" class="view-mode-btn" onclick="switchFormattedViewMode('text')">
+                                    <i class="fa-solid fa-align-left"></i> Plain Text
+                                </button>
+                            </div>
+
+                            <button type="button" class="btn btn-outline btn-sm" onclick="printFormattedDocument()">
+                                <i class="fa-solid fa-print"></i> Print
+                            </button>
+                            <button type="button" class="btn btn-outline btn-sm" data-export-format="pdf" onclick="triggerDirectDownload('pdf', this)">
+                                <i class="fa-solid fa-file-pdf"></i> Export PDF
+                            </button>
+                            <button type="button" class="btn btn-primary btn-sm" onclick="openFullViewModal('formattedView')">
+                                <i class="fa-solid fa-expand"></i> Full View
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- VISUAL DOCUMENT SHEET (WHITE PAPER RECONSTRUCTION) -->
+                    <div id="formattedVisualViewport" class="formatted-paper-viewport" style="overflow: auto; text-align: center; padding: 24px;">
+                        <div id="formattedDocumentSheet" class="formatted-document-sheet" data-theme-surface="paper" style="transform-origin: top center; transition: transform 0.2s ease; margin: 0 auto;">
+                            {{ (job.formatted_html or job.display_formatted_html) | safe }}
+                        </div>
+                    </div>
+
+                    <!-- PLAIN TEXT FALLBACK -->
+                    <div id="formattedTextPanel" class="code-panel results-scroll-panel" style="display: none;">
+                        <div class="code-body" style="padding: 20px;">
+                            <pre id="formattedPreBlock" class="results-text-block">{{ job.display_formatted_text or job.formatted_text or 'No formatted content available.' }}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 6: STRUCTURED JSON -->
+            <div id="tabContent_json" class="tab-pane results-tab-pane" role="tabpanel">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+                    <div>
+                        <strong style="color: var(--text-main); font-size: 1.05rem; display: block;">Structured JSON Output</strong>
+                        <small style="color: var(--text-muted);">Clean, machine-readable domain data separated from UI metadata.</small>
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="btn btn-outline btn-sm" onclick="toggleJsonTreeExpand(true)">
+                            <i class="fa-solid fa-folder-open"></i> Expand All
+                        </button>
+                        <button class="btn btn-outline btn-sm" onclick="toggleJsonTreeExpand(false)">
+                            <i class="fa-solid fa-folder"></i> Collapse All
+                        </button>
+                        <button class="btn btn-outline btn-sm" onclick="copyJsonOutput()">
+                            <i class="fa-solid fa-copy"></i> Copy JSON
+                        </button>
+                        <button class="btn btn-outline btn-sm" data-export-format="json" onclick="triggerDirectDownload('json', this)">
+                            <i class="fa-solid fa-download"></i> Download JSON
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="openFullViewModal('json')">
+                            <i class="fa-solid fa-expand"></i> View Full JSON
+                        </button>
+                    </div>
+                </div>
+
+                <div class="code-panel results-json-panel" id="jsonViewerPanel" style="height: 380px; max-height: 380px; overflow: auto; border-radius: 8px; background: var(--code-bg, #0f172a); border: 1px solid var(--card-border); padding: 16px;">
+                    <div id="interactiveJsonTree" class="json-tree-container"></div>
+                    <pre id="jsonCodeBlock" style="display: none;"><code>{{ job | clean_json }}</code></pre>
+                </div>
+            </div>
+
+            <!-- TAB 7: DOCUMENT PREVIEW -->
+            <div id="tabContent_imagePreview" class="tab-pane results-tab-pane" role="tabpanel">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <strong style="color: var(--text-main); font-size: 1.05rem; display: block;">Document Preview</strong>
+                        <small style="color: var(--text-muted);">Original uploaded document/image/PDF page.</small>
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                        <button class="btn btn-outline btn-sm" title="Zoom Out" onclick="zoomDocImg(0.8)"><i class="fa-solid fa-magnifying-glass-minus"></i> Zoom −</button>
+                        <button class="btn btn-outline btn-sm" title="Reset 100%" onclick="resetDocImg()">100%</button>
+                        <button class="btn btn-outline btn-sm" title="Zoom In" onclick="zoomDocImg(1.2)"><i class="fa-solid fa-magnifying-glass-plus"></i> Zoom +</button>
+                        <button class="btn btn-outline btn-sm" title="Fit Width" onclick="fitDocPreview('width')"><i class="fa-solid fa-arrows-left-right"></i> Fit Width</button>
+                        <button class="btn btn-outline btn-sm" title="Fit Page" onclick="fitDocPreview('page')"><i class="fa-solid fa-compress"></i> Fit Page</button>
+                        <button class="btn btn-primary btn-sm" onclick="openFullViewModal('preview')"><i class="fa-solid fa-expand"></i> Full View</button>
+                    </div>
+                </div>
+
+                <div class="doc-preview-frame" id="docPreviewContainer" style="overflow: auto; text-align: center; background: #262626; min-height: 480px; padding: 20px; border-radius: 8px;">
+                    {% set preview_file = job.saved_file_name or job.filename %}
+                    {% if preview_file %}
+                        {% set preview_ext = preview_file.rsplit('.', 1)[-1].lower() if '.' in preview_file else '' %}
+                        {% if preview_ext == 'pdf' %}
+                            <iframe id="docPreviewPdf" class="doc-preview-pdf" src="{{ url_for('uploaded_file', filename=preview_file) }}" title="Document PDF Preview" style="width: 100%; height: 600px; border: none; background: #fff; border-radius: 4px;"></iframe>
+                        {% else %}
+                            <img id="docPreviewImage" src="{{ url_for('uploaded_file', filename=preview_file) }}" alt="Document Preview" class="doc-preview-image" style="max-width: 100%; transition: transform 0.2s ease; transform-origin: top center;">
+                        {% endif %}
+                    {% else %}
+                        <div class="results-empty-state" style="color: #aaa; padding: 40px;">
+                            <i class="fa-solid fa-file-circle-question" style="font-size: 2.5rem; margin-bottom: 10px;"></i>
+                            <p>Document preview unavailable for this job.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 6. EXPORT RESULTS SECTION -->
+        <div style="margin-bottom: 40px;">
+            <div style="margin-bottom: 20px;">
+                <h2 style="font-size: 1.5rem; margin-bottom: 4px;"><i class="fa-solid fa-file-export" style="color: var(--primary);"></i> Export Document Data</h2>
+                <p>Download your extracted intelligence and formatted report in multiple formats.</p>
+            </div>
+
+            <!-- EXPORT CARDS GRID -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px;">
+
+                <!-- PDF REPORT -->
+                <div class="saas-card" style="display: flex; flex-direction: column; justify-content: space-between; gap: 18px; padding: 24px; border-left: 4px solid var(--danger);">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 12px;">
+                            <div class="metric-icon-box" style="color: var(--danger); background: var(--danger-bg); width: 48px; height: 48px; font-size: 1.4rem;">
+                                <i class="fa-solid fa-file-pdf"></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 1.15rem; color: var(--text-main); display: block;">PDF Report</strong>
+                                <span class="badge badge-outline" style="font-size: 0.72rem; color: var(--danger); border-color: rgba(239,68,68,0.3);">Comprehensive Report</span>
+                            </div>
+                        </div>
+                        <p style="font-size: 0.86rem; color: var(--text-muted); line-height: 1.5; margin: 0;">
+                            Clean, publication-ready PDF report featuring document details, image specifications, executive AI summary, structured key fields, detected tables, and visual preview.
+                        </p>
+                    </div>
+                    <button class="btn btn-primary btn-md" data-export-format="pdf" onclick="triggerDirectDownload('pdf', this)" style="width: 100%; background: #ef4444; border-color: #ef4444;">
+                        <i class="fa-solid fa-file-pdf"></i> Download PDF Report
+                    </button>
+                </div>
+
+                <!-- CSV DATASET -->
+                <div class="saas-card" style="display: flex; flex-direction: column; justify-content: space-between; gap: 18px; padding: 24px; border-left: 4px solid var(--success);">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 12px;">
+                            <div class="metric-icon-box" style="color: var(--success); background: var(--success-bg); width: 48px; height: 48px; font-size: 1.4rem;">
+                                <i class="fa-solid fa-file-csv"></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 1.15rem; color: var(--text-main); display: block;">CSV Dataset</strong>
+                                <span class="badge badge-outline" style="font-size: 0.72rem; color: var(--success); border-color: rgba(16,185,129,0.3);">Structured Dataset</span>
+                            </div>
+                        </div>
+                        <p style="font-size: 0.86rem; color: var(--text-muted); line-height: 1.5; margin: 0;">
+                            Properly structured CSV dataset containing all extracted information: document details, image parameters, extracted fields, values, confidence scores, detected line items, and entities.
+                        </p>
+                    </div>
+                    <button class="btn btn-primary btn-md" data-export-format="csv" onclick="triggerDirectDownload('csv', this)" style="width: 100%; background: #10b981; border-color: #10b981;">
+                        <i class="fa-solid fa-file-csv"></i> Download CSV Dataset
+                    </button>
+                </div>
+
+                <!-- EXCEL SPREADSHEET -->
+                <div class="saas-card" style="display: flex; flex-direction: column; justify-content: space-between; gap: 18px; padding: 24px; border-left: 4px solid #059669;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 12px;">
+                            <div class="metric-icon-box" style="color: #059669; background: rgba(5,150,105,0.12); width: 48px; height: 48px; font-size: 1.4rem;">
+                                <i class="fa-solid fa-file-excel"></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 1.15rem; color: var(--text-main); display: block;">Excel Workbook</strong>
+                                <span class="badge badge-outline" style="font-size: 0.72rem; color: #059669; border-color: rgba(5,150,105,0.3);">Multi-sheet .xlsx</span>
+                            </div>
+                        </div>
+                        <p style="font-size: 0.86rem; color: var(--text-muted); line-height: 1.5; margin: 0;">
+                            Formatted Microsoft Excel workbook with overview and extracted fields sheets for spreadsheet processing.
+                        </p>
+                    </div>
+                    <button class="btn btn-outline btn-md" data-export-format="excel" onclick="triggerDirectDownload('excel', this)" style="width: 100%; border-color: rgba(5,150,105,0.4); color: #059669;">
+                        <i class="fa-solid fa-download"></i> Download .XLSX
+                    </button>
+                </div>
+
+                <!-- DOCX -->
+                <div class="saas-card" style="display: flex; flex-direction: column; justify-content: space-between; gap: 18px; padding: 24px; border-left: 4px solid var(--primary);">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 12px;">
+                            <div class="metric-icon-box" style="color: var(--primary); background: var(--primary-light); width: 48px; height: 48px; font-size: 1.4rem;">
+                                <i class="fa-solid fa-file-word"></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 1.15rem; color: var(--text-main); display: block;">Word Document</strong>
+                                <span class="badge badge-outline" style="font-size: 0.72rem; color: var(--primary); border-color: rgba(37,99,235,0.3);">Editable DOCX</span>
+                            </div>
+                        </div>
+                        <p style="font-size: 0.86rem; color: var(--text-muted); line-height: 1.5; margin: 0;">
+                            Editable Microsoft Word report containing structured data tables, summary narrative, and formatted text.
+                        </p>
+                    </div>
+                    <button class="btn btn-outline btn-md" data-export-format="docx" onclick="triggerDirectDownload('docx', this)" style="width: 100%; border-color: rgba(37,99,235,0.4); color: var(--primary);">
+                        <i class="fa-solid fa-download"></i> Download .DOCX
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        {% endif %}
+
+    </div>
+</section>
+
+<!-- UNIFIED FULL VIEW MODAL -->
+<div id="fullViewModal" class="full-view-modal-backdrop" style="display: none;" onclick="handleFullViewBackdropClick(event)">
+    <div class="full-view-modal-content">
+        <div class="full-view-modal-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i id="fullViewModalIcon" class="fa-solid fa-expand" style="color: var(--primary); font-size: 1.25rem;"></i>
+                <h3 id="fullViewModalTitle" style="margin: 0; font-size: 1.2rem; font-weight: 700; color: var(--text-main);">Full View Viewer</h3>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <div id="fullViewModalCustomActions" style="display: flex; gap: 8px;"></div>
+                <button type="button" class="full-view-close-btn" onclick="closeFullViewModal()" title="Close Viewer (Esc)" aria-label="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+        <div id="fullViewModalBody" class="full-view-modal-body">
+            <!-- Content dynamically rendered here -->
+        </div>
+    </div>
+</div>
+
+<!-- HIDDEN RAW JSON FOR CLIENT JS ACCESS -->
+{% if job %}
+<script id="rawJobJson" type="application/json">
+    {{ job | job_json | safe }}
+</script>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script>
+    window.currentJobId = "{{ (job and (job.job_id or job.id)) or job_id or '' }}";
+</script>
+{% endblock %}

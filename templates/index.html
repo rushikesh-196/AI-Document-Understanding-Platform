@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}AI Document Intelligence Platform — Transform Raw Documents into Structured Data{% endblock %}
+
+{% block content %}
+<!-- HERO SECTION -->
+<section class="hero-section">
+    <div class="container hero-grid">
+        <div>
+            <div class="hero-badge"><i class="fa-solid fa-sparkles"></i> Next-Gen Document AI Platform</div>
+            <h1 class="hero-title">AI Document <span class="gradient-text">Intelligence Platform</span></h1>
+            <p class="hero-subtitle">Transform raw documents into structured intelligence with AI-powered classification, extraction, summarization, and analysis.</p>
+            <div class="hero-actions">
+                <a href="{{ url_for('upload_page') }}" class="btn btn-primary btn-lg"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Document</a>
+                <a href="#features" class="btn btn-outline btn-lg"><i class="fa-solid fa-circle-info"></i> Learn More</a>
+            </div>
+        </div>
+        <div class="hero-preview-card" aria-label="Document processing workflow preview">
+            <div class="hero-preview-graphic">
+                <div class="graphic-step"><div class="graphic-step-icon"><i class="fa-solid fa-file-pdf"></i></div><div><strong>1. Document Upload</strong><br><small>PDF, PNG, JPG, or scanned document</small></div><span class="badge badge-primary">Input</span></div>
+                <div class="workflow-arrow" aria-hidden="true"><i class="fa-solid fa-arrow-down"></i></div>
+                <div class="graphic-step"><div class="graphic-step-icon"><i class="fa-solid fa-microchip"></i></div><div><strong>2. AI Processing Pipeline</strong><br><small>OCR engine, layout and entity extraction</small></div><span class="badge badge-warning">Active</span></div>
+                <div class="workflow-arrow" aria-hidden="true"><i class="fa-solid fa-arrow-down"></i></div>
+                <div class="graphic-step"><div class="graphic-step-icon"><i class="fa-solid fa-code"></i></div><div><strong>3. Structured Results</strong><br><small>Clean data, summary and export-ready output</small></div><span class="badge badge-success">Result</span></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="home-section how-it-works-section">
+    <div class="container">
+        <div class="section-header"><span class="section-eyebrow">Simple workflow</span><h2>How It Works</h2><p>Turn a document into useful data in three clear steps.</p></div>
+        <div class="steps-grid stagger-children reveal">
+            <article class="process-step"><span class="step-number">01</span><div class="feature-icon-box"><i class="fa-solid fa-cloud-arrow-up"></i></div><h3>Upload</h3><p>Upload a supported image or PDF document securely.</p></article>
+            <article class="process-step"><span class="step-number">02</span><div class="feature-icon-box"><i class="fa-solid fa-wand-magic-sparkles"></i></div><h3>Process</h3><p>OCR, classification, layout analysis, and field extraction run automatically.</p></article>
+            <article class="process-step"><span class="step-number">03</span><div class="feature-icon-box"><i class="fa-solid fa-file-export"></i></div><h3>Review &amp; Export</h3><p>Review structured results, search history, or export the information.</p></article>
+        </div>
+    </div>
+</section>
+
+<!-- FEATURES SECTION -->
+<section id="features" class="features-section home-section">
+    <div class="container">
+        <div class="section-header"><span class="section-eyebrow">Built for document workflows</span><h2>Powerful Document Intelligence</h2><p>Transform documents into structured, actionable information with AI-powered OCR and document understanding.</p></div>
+        <div class="features-grid stagger-children reveal" aria-label="Document intelligence features">
+            <article class="saas-card feature-card"><div class="feature-icon-box"><i class="fa-solid fa-file-lines"></i></div><h3>Intelligent OCR</h3><p>Extract accurate text from scanned documents, images, and PDFs using advanced OCR technology.</p></article>
+            <article class="saas-card feature-card"><div class="feature-icon-box"><i class="fa-solid fa-tags"></i></div><h3>Document Classification</h3><p>Automatically identify invoices, receipts, business cards, purchase orders, ID documents, and reports.</p></article>
+            <article class="saas-card feature-card"><div class="feature-icon-box"><i class="fa-solid fa-key"></i></div><h3>Information Extraction</h3><p>Extract names, dates, invoice numbers, addresses, contacts, GST/tax numbers, amounts, products, and quantities.</p></article>
+            <article class="saas-card feature-card"><div class="feature-icon-box"><i class="fa-solid fa-table-cells-large"></i></div><h3>Layout Understanding</h3><p>Preserve document structure while identifying tables, headings, paragraphs, and key-value relationships.</p></article>
+            <article class="saas-card feature-card"><div class="feature-icon-box"><i class="fa-solid fa-lightbulb"></i></div><h3>AI-Powered Summary</h3><p>Generate a concise, meaningful summary based only on the information extracted from the document.</p></article>
+            <article class="saas-card feature-card"><div class="feature-icon-box"><i class="fa-solid fa-code-branch"></i></div><h3>Structured Data</h3><p>Convert unstructured documents into clean structured information for applications and business workflows.</p></article>
+            <article class="saas-card feature-card"><div class="feature-icon-box"><i class="fa-solid fa-file-arrow-up"></i></div><h3>Multi-Format Support</h3><p>Process common document formats including PNG, JPG, JPEG, TIFF, and PDF.</p></article>
+            <article class="saas-card feature-card"><div class="feature-icon-box"><i class="fa-solid fa-magnifying-glass"></i></div><h3>Search &amp; History</h3><p>Save processed documents automatically, then search, filter, and revisit previous extraction results.</p></article>
+            <article class="saas-card feature-card"><div class="feature-icon-box"><i class="fa-solid fa-file-export"></i></div><h3>Export &amp; Integration</h3><p>Export extracted information as JSON or CSV for downstream applications and API-based workflows.</p></article>
+        </div>
+    </div>
+</section>
+
+<!-- SUPPORTED DOCUMENT TYPES -->
+<section class="home-section document-types-section"><div class="container document-types-layout reveal"><div><span class="section-eyebrow">Flexible input</span><h2>Supported Document Types</h2><p>Process common business and identity documents through one consistent workflow.</p></div><ul class="document-type-list" aria-label="Supported document types"><li><i class="fa-solid fa-receipt"></i> Invoices &amp; Receipts</li><li><i class="fa-solid fa-id-card"></i> ID Documents</li><li><i class="fa-solid fa-address-card"></i> Business Cards</li><li><i class="fa-solid fa-file-contract"></i> Purchase Orders</li><li><i class="fa-solid fa-building-columns"></i> Bank Statements</li><li><i class="fa-solid fa-file-medical"></i> Reports &amp; Forms</li></ul></div></section>
+
+<!-- BENEFITS -->
+<section class="home-section benefits-section"><div class="container"><div class="section-header reveal"><span class="section-eyebrow">Why intelligent OCR</span><h2>Move From Documents to Decisions</h2><p>Reduce repetitive document handling while keeping extracted information easy to review and use.</p></div><div class="benefits-grid stagger-children reveal"><article class="benefit-item"><i class="fa-solid fa-bolt"></i><div><h3>Faster Processing</h3><p>Turn manual review work into a guided automated workflow.</p></div></article><article class="benefit-item"><i class="fa-solid fa-circle-check"></i><div><h3>Clearer Results</h3><p>Review OCR confidence, extracted fields, and a readable document summary.</p></div></article><article class="benefit-item"><i class="fa-solid fa-arrow-right-arrow-left"></i><div><h3>Reusable Data</h3><p>Use exports and structured output in reporting and downstream systems.</p></div></article></div></div></section>
+
+<!-- CALL TO ACTION -->
+<section class="home-section cta-section"><div class="container"><div class="saas-card cta-card reveal"><div><span class="section-eyebrow">Ready when you are</span><h2>Ready to Analyze Your Documents?</h2><p>Upload a document to extract text, fields, and structured information.</p></div><a href="{{ url_for('upload_page') }}" class="btn btn-primary btn-lg"><i class="fa-solid fa-cloud-arrow-up"></i> Upload a Document → Extract Information</a></div></div></section>
+{% endblock %}

@@ -1,0 +1,473 @@
+{% extends "base.html" %}
+
+{% block title %}Settings — AI Document Intelligence Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+.settings-grid {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 28px;
+    align-items: start;
+}
+.settings-nav { position: sticky; top: calc(var(--navbar-height) + 24px); }
+.settings-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition), transform 0.15s ease;
+    text-decoration: none;
+    margin-bottom: 4px;
+}
+.settings-nav-item:hover, .settings-nav-item.active {
+    background: var(--primary-light);
+    color: var(--primary);
+    transform: translateX(3px);
+}
+.settings-panel { display: none; }
+.settings-panel.active {
+    display: block;
+    animation: tabPaneFade 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.settings-section { margin-bottom: 28px; }
+.settings-section:last-child { margin-bottom: 0; }
+.settings-section h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--card-border);
+}
+.setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--card-border);
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-label { font-size: 0.9rem; font-weight: 500; color: var(--text-main); }
+.setting-desc { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+
+/* Toggle switch */
+.toggle-switch {
+    position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+    position: absolute; inset: 0; border-radius: 9999px;
+    background: var(--card-border); cursor: pointer; transition: 0.2s;
+}
+.toggle-slider::before {
+    content: ''; position: absolute; width: 18px; height: 18px;
+    left: 3px; top: 3px; border-radius: 50%; background: white; transition: 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.toggle-switch input:checked + .toggle-slider { background: var(--primary); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+.avatar-circle {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: var(--primary); display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; font-weight: 700; color: #fff;
+}
+
+@media (max-width: 700px) {
+    .settings-grid { grid-template-columns: 1fr; }
+    .settings-nav { position: static; display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 0; }
+    .settings-nav-item { padding: 8px 12px; font-size: 0.82rem; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section style="padding: 48px 0;">
+    <div class="container" style="max-width: 960px;">
+        <div style="margin-bottom: 28px;" class="reveal">
+            <div class="hero-badge"><i class="fa-solid fa-gear"></i> Settings</div>
+            <h1 style="margin-top:8px;">Account Settings</h1>
+            <p style="color:var(--text-muted);">Manage your profile, preferences, and application settings.</p>
+        </div>
+
+        <div class="settings-grid reveal">
+            <!-- Sidebar Nav -->
+            <div class="settings-nav saas-card" style="padding: 12px;">
+                <a class="settings-nav-item active" onclick="switchPanel('profile', this)">
+                    <i class="fa-solid fa-user-circle" style="width:18px;"></i> Profile
+                </a>
+                <a class="settings-nav-item" onclick="switchPanel('account', this)">
+                    <i class="fa-solid fa-shield-halved" style="width:18px;"></i> Account
+                </a>
+                <a class="settings-nav-item" onclick="switchPanel('appearance', this)">
+                    <i class="fa-solid fa-palette" style="width:18px;"></i> Appearance
+                </a>
+                <a class="settings-nav-item" onclick="switchPanel('language', this)">
+                    <i class="fa-solid fa-globe" style="width:18px;"></i> Language
+                </a>
+                <a class="settings-nav-item" onclick="switchPanel('notifications', this)">
+                    <i class="fa-solid fa-bell" style="width:18px;"></i> Notifications
+                </a>
+                <hr style="border-color:var(--card-border);margin:8px 0;">
+                <a href="/history" class="settings-nav-item">
+                    <i class="fa-solid fa-clock-rotate-left" style="width:18px;"></i> History
+                </a>
+                <a href="/dashboard" class="settings-nav-item">
+                    <i class="fa-solid fa-gauge" style="width:18px;"></i> Dashboard
+                </a>
+                <a class="settings-nav-item" style="color:var(--danger);" onclick="AuthManager.logoutUser()">
+                    <i class="fa-solid fa-right-from-bracket" style="width:18px;"></i> Sign Out
+                </a>
+            </div>
+
+            <!-- Panels -->
+            <div>
+                <!-- Profile Panel -->
+                <div id="panel_profile" class="settings-panel saas-card active">
+                    <div class="settings-section">
+                        <h3>Profile Information</h3>
+                        <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;">
+                            <div class="avatar-circle" id="settingsAvatar">?</div>
+                            <div>
+                                <p style="font-weight:600;font-size:1rem;color:var(--text-main);" id="settingsFullName">Loading...</p>
+                                <p style="color:var(--text-muted);font-size:0.875rem;" id="settingsEmail"></p>
+                                <p style="color:var(--text-muted);font-size:0.8rem;margin-top:4px;">Member since <span id="settingsMemberSince">—</span></p>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="profileName">Full Name</label>
+                            <input type="text" id="profileName" class="form-control" placeholder="Your full name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="profileEmail">Email Address</label>
+                            <input type="email" id="profileEmail" class="form-control" placeholder="your@email.com" readonly
+                                   style="opacity:0.7;cursor:not-allowed;">
+                        </div>
+                        <button class="btn btn-primary" onclick="saveProfile()" style="min-width:140px;">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Profile
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Account Panel -->
+                <div id="panel_account" class="settings-panel saas-card">
+                    <div class="settings-section">
+                        <h3>Security & Account</h3>
+                        <div class="setting-row" style="flex-direction:column; align-items:flex-start; gap:14px;">
+                            <div>
+                                <div class="setting-label">Change Password</div>
+                                <div class="setting-desc">Update your account password</div>
+                            </div>
+                            <div id="pwChangeForm" style="width:100%; max-width:420px; display:flex; flex-direction:column; gap:12px;">
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label class="form-label" for="pwCurrent">Current Password</label>
+                                    <div style="position:relative;">
+                                        <input type="password" id="pwCurrent" class="form-control" placeholder="Enter current password" autocomplete="current-password">
+                                        <span onclick="togglePwVis('pwCurrent',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text-muted);"><i class="fa-solid fa-eye"></i></span>
+                                    </div>
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label class="form-label" for="pwNew">New Password</label>
+                                    <div style="position:relative;">
+                                        <input type="password" id="pwNew" class="form-control" placeholder="At least 8 characters" autocomplete="new-password" oninput="updatePwStrength(this.value)">
+                                        <span onclick="togglePwVis('pwNew',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text-muted);"><i class="fa-solid fa-eye"></i></span>
+                                    </div>
+                                    <div id="pwStrengthBar" style="height:4px;border-radius:2px;margin-top:6px;background:#e5e7eb;overflow:hidden;">
+                                        <div id="pwStrengthFill" style="height:100%;width:0%;transition:width 0.3s,background 0.3s;border-radius:2px;"></div>
+                                    </div>
+                                    <div id="pwStrengthLabel" style="font-size:0.75rem;margin-top:4px;color:var(--text-muted);"></div>
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label class="form-label" for="pwConfirm">Confirm New Password</label>
+                                    <div style="position:relative;">
+                                        <input type="password" id="pwConfirm" class="form-control" placeholder="Repeat new password" autocomplete="new-password">
+                                        <span onclick="togglePwVis('pwConfirm',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text-muted);"><i class="fa-solid fa-eye"></i></span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary" style="min-width:160px; align-self:flex-start;" onclick="submitPasswordChange()">
+                                    <i class="fa-solid fa-lock"></i> Update Password
+                                </button>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div>
+                                <div class="setting-label">Delete Account</div>
+                                <div class="setting-desc" style="color:var(--danger);">Permanently remove your account and all data</div>
+                            </div>
+                            <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);"
+                                onclick="if(confirm('Are you sure? This cannot be undone.')) { AuthManager.logoutUser(); }">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h3>Session</h3>
+                        <div class="setting-row">
+                            <div>
+                                <div class="setting-label">Sign Out of All Devices</div>
+                                <div class="setting-desc">Clears all local session data</div>
+                            </div>
+                            <button class="btn btn-outline btn-sm" onclick="AuthManager.logoutUser()">Sign Out</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appearance Panel -->
+                <div id="panel_appearance" class="settings-panel saas-card">
+                    <div class="settings-section">
+                        <h3>Theme</h3>
+                        <div class="setting-row">
+                            <div>
+                                <div class="setting-label">Dark Mode</div>
+                                <div class="setting-desc">Switch to a dark color scheme</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="darkModeToggle" onchange="setThemePreference(this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Language Panel -->
+                <div id="panel_language" class="settings-panel saas-card">
+                    <div class="settings-section">
+                        <h3>Language & Region</h3>
+                        <div class="form-group">
+                            <label class="form-label" for="uiLanguage">Interface Language</label>
+                            <select id="uiLanguage" class="form-control">
+                                <option value="en" selected>English (US)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="defaultOcrLang">Default OCR Language</label>
+                            <select id="defaultOcrLang" class="form-control">
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="saveLanguage()" style="min-width:140px;">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Preferences
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Notifications Panel -->
+                <div id="panel_notifications" class="settings-panel saas-card">
+                    <div class="settings-section">
+                        <h3>Notification Preferences</h3>
+                        <div class="setting-row">
+                            <div>
+                                <div class="setting-label">Processing Alerts</div>
+                                <div class="setting-desc">Show in-app toast when extraction completes</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notifyProcessing" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-row">
+                            <div>
+                                <div class="setting-label">Error Alerts</div>
+                                <div class="setting-desc">Show in-app toast when extraction fails</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notifyErrors" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-row">
+                            <div>
+                                <div class="setting-label">Browser Notifications</div>
+                                <div class="setting-desc">System-level notifications (requires permission)</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notifyBrowser" onchange="requestBrowserNotif(this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <button class="btn btn-primary" onclick="saveNotifications()" style="min-width:160px;margin-top:12px;">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Notifications
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const user = AuthManager.getCurrentUser();
+
+    // Populate profile info
+    if (user) {
+        document.getElementById('settingsAvatar').textContent = user.name.charAt(0).toUpperCase();
+        document.getElementById('settingsFullName').textContent = user.name;
+        document.getElementById('settingsEmail').textContent = user.email;
+        document.getElementById('profileName').value = user.name;
+        document.getElementById('profileEmail').value = user.email;
+        const created = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown';
+        document.getElementById('settingsMemberSince').textContent = created;
+    }
+
+    // Sync dark mode toggle with saved theme
+    const currentTheme = document.body.getAttribute('data-theme') || localStorage.getItem('ai_doc_theme') || 'light';
+    document.getElementById('darkModeToggle').checked = currentTheme === 'dark';
+
+    // Load saved prefs
+    const prefs = JSON.parse(localStorage.getItem('ai_doc_prefs') || '{}');
+    if (prefs.defaultOcrLang) document.getElementById('defaultOcrLang').value = prefs.defaultOcrLang;
+    if (prefs.uiLanguage) document.getElementById('uiLanguage').value = prefs.uiLanguage;
+    document.getElementById('notifyProcessing').checked = prefs.notifyProcessing !== false;
+    document.getElementById('notifyErrors').checked = prefs.notifyErrors !== false;
+});
+
+function switchPanel(name, el) {
+    document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.settings-nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('panel_' + name).classList.add('active');
+    el.classList.add('active');
+}
+
+function setThemePreference(dark) {
+    const theme = dark ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    document.body.setAttribute('data-theme', theme);
+    localStorage.setItem('ai_doc_theme', theme);
+    showToast(`${dark ? 'Dark' : 'Light'} mode enabled`, 'success');
+}
+
+function saveProfile() {
+    const name = document.getElementById('profileName').value.trim();
+    if (!name) { showToast('Name cannot be empty.', 'error'); return; }
+    const user = AuthManager.getCurrentUser();
+    if (user) {
+        user.name = name;
+        localStorage.setItem(AuthManager.KEYS.CURRENT_USER, JSON.stringify(user));
+        // Also update user in the users list
+        const users = AuthManager.getUsers();
+        const idx = users.findIndex(u => u.id === user.id);
+        if (idx > -1) { users[idx].name = name; localStorage.setItem(AuthManager.KEYS.USERS, JSON.stringify(users)); }
+        document.getElementById('settingsFullName').textContent = name;
+        document.getElementById('settingsAvatar').textContent = name.charAt(0).toUpperCase();
+        showToast('Profile updated successfully!', 'success');
+    }
+}
+
+function saveLanguage() {
+    const prefs = JSON.parse(localStorage.getItem('ai_doc_prefs') || '{}');
+    prefs.uiLanguage = document.getElementById('uiLanguage').value;
+    prefs.defaultOcrLang = document.getElementById('defaultOcrLang').value;
+    localStorage.setItem('ai_doc_prefs', JSON.stringify(prefs));
+    showToast('Language preferences saved!', 'success');
+}
+
+function saveNotifications() {
+    const prefs = JSON.parse(localStorage.getItem('ai_doc_prefs') || '{}');
+    prefs.notifyProcessing = document.getElementById('notifyProcessing').checked;
+    prefs.notifyErrors = document.getElementById('notifyErrors').checked;
+    prefs.notifyBrowser = document.getElementById('notifyBrowser').checked;
+    localStorage.setItem('ai_doc_prefs', JSON.stringify(prefs));
+    showToast('Notification preferences saved!', 'success');
+}
+
+function requestBrowserNotif(enable) {
+    if (!enable) return;
+    if (!('Notification' in window)) { showToast('Browser notifications not supported.', 'warning'); return; }
+    Notification.requestPermission().then(perm => {
+        if (perm !== 'granted') {
+            document.getElementById('notifyBrowser').checked = false;
+            showToast('Notification permission denied.', 'warning');
+        } else {
+            showToast('Browser notifications enabled!', 'success');
+        }
+    });
+}
+
+/* ── Password Helpers ──────────────────────────────────── */
+function togglePwVis(fieldId, iconEl) {
+    const input = document.getElementById(fieldId);
+    if (!input) return;
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    const icon = iconEl.querySelector('i');
+    if (icon) {
+        icon.className = isHidden ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+    }
+}
+
+function updatePwStrength(val) {
+    const fill = document.getElementById('pwStrengthFill');
+    const label = document.getElementById('pwStrengthLabel');
+    if (!fill || !label) return;
+    let score = 0;
+    if (val.length >= 8) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    const levels = [
+        { pct: '0%',   color: '#e5e7eb', text: '' },
+        { pct: '25%',  color: '#ef4444', text: 'Weak' },
+        { pct: '50%',  color: '#f59e0b', text: 'Fair' },
+        { pct: '75%',  color: '#3b82f6', text: 'Good' },
+        { pct: '100%', color: '#10b981', text: 'Strong' },
+    ];
+    const lvl = levels[score];
+    fill.style.width = lvl.pct;
+    fill.style.background = lvl.color;
+    label.textContent = lvl.text;
+    label.style.color = lvl.color;
+}
+
+async function submitPasswordChange() {
+    const current = document.getElementById('pwCurrent').value;
+    const newPw   = document.getElementById('pwNew').value;
+    const confirm = document.getElementById('pwConfirm').value;
+
+    if (!current || !newPw || !confirm) {
+        showToast('Please fill in all password fields.', 'error'); return;
+    }
+    if (newPw.length < 8) {
+        showToast('New password must be at least 8 characters.', 'error'); return;
+    }
+    if (newPw !== confirm) {
+        showToast('Passwords do not match.', 'error'); return;
+    }
+
+    const btn = document.querySelector('#pwChangeForm .btn-primary');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating…'; }
+
+    try {
+        const res = await fetch('/api/user/update-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ current_password: current, new_password: newPw }),
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('Password updated successfully!', 'success');
+            document.getElementById('pwCurrent').value = '';
+            document.getElementById('pwNew').value = '';
+            document.getElementById('pwConfirm').value = '';
+            updatePwStrength('');
+        } else {
+            showToast(data.message || 'Failed to update password.', 'error');
+        }
+    } catch (e) {
+        showToast('Network error. Please try again.', 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-lock"></i> Update Password'; }
+    }
+}
+</script>
+{% endblock %}

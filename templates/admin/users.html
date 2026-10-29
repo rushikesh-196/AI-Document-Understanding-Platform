@@ -1,0 +1,363 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}User Management — Admin Control Center{% endblock %}
+{% block header_title %}User Management &amp; Access Control{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1400px; margin: 0 auto;">
+
+    <!-- TOP CONTROLS & HEADER -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+        <div>
+            <h1 style="font-size: 1.5rem; margin-bottom: 4px;">Assigned Users</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0;">Manage accounts, control access status, and view document quotas for users under your administration.</p>
+        </div>
+        <button type="button" class="btn btn-primary btn-md" onclick="openCreateUserModal()">
+            <i class="fa-solid fa-user-plus"></i> Create New User
+        </button>
+    </div>
+
+    <!-- SEARCH & FILTER BAR -->
+    <div class="saas-card" style="padding: 16px 20px; margin-bottom: 24px;">
+        <form method="GET" action="{{ url_for('admin.users_page') }}" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 250px; position: relative;">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                <input type="text" id="userSearchInput" name="q" value="{{ search or '' }}" class="form-control" placeholder="Search users by name, email..." style="padding-left: 38px;" oninput="filterUsersClient()">
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <select id="userStatusFilter" class="form-control" style="width: auto;" onchange="filterUsersClient()">
+                    <option value="ALL">All Statuses</option>
+                    <option value="active">Active Only</option>
+                    <option value="blocked">Blocked Only</option>
+                </select>
+                <button type="submit" class="btn btn-outline btn-md">
+                    <i class="fa-solid fa-filter"></i> Search
+                </button>
+                {% if search %}
+                <a href="{{ url_for('admin.users_page') }}" class="btn btn-outline btn-md" title="Clear filter">Clear</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- USERS TABLE -->
+    <div class="saas-card" style="padding: 24px;">
+        <div class="table-responsive">
+            <table class="saas-table" id="adminUsersTable">
+                <thead>
+                    <tr>
+                        <th>User Name &amp; Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Documents</th>
+                        <th>Registered Date</th>
+                        <th>Last Activity</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if users %}
+                        {% for u in users %}
+                        <tr id="userRow_{{ u.id }}" data-status="{{ u.status }}" data-name="{{ u.name | lower }}" data-email="{{ u.email | lower }}">
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div class="user-avatar" style="width: 36px; height: 36px; font-size: 0.9rem;">
+                                        {{ u.name[0] if u.name else 'U' }}
+                                    </div>
+                                    <div>
+                                        <strong style="color: var(--text-main); font-size: 0.92rem;">{{ u.name }}</strong>
+                                        <div style="color: var(--text-muted); font-size: 0.8rem;">{{ u.email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if u.role == 'admin' %}
+                                    <span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #8B5CF6; font-weight: 700;">Admin</span>
+                                {% else %}
+                                    <span class="badge badge-primary">User</span>
+                                {% endif %}
+                            </td>
+                            <td id="statusBadgeContainer_{{ u.id }}">
+                                {% if u.status == 'active' %}
+                                    <span class="badge badge-success"><i class="fa-solid fa-check"></i> Active</span>
+                                {% else %}
+                                    <span class="badge badge-danger"><i class="fa-solid fa-ban"></i> Blocked</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge" style="background: var(--background-alt); color: var(--text-main); font-weight: 600;">
+                                    <i class="fa-solid fa-file-lines" style="color: var(--primary); margin-right: 4px;"></i> {{ u.document_count or 0 }}
+                                </span>
+                            </td>
+                            <td style="font-size: 0.85rem; color: var(--text-muted);">{{ u.created_at or 'N/A' }}</td>
+                            <td style="font-size: 0.85rem; color: var(--text-muted);">{{ u.last_activity or 'No activity recorded' }}</td>
+                            <td style="text-align: right;">
+                                <div style="display: inline-flex; gap: 6px;">
+                                    <!-- View Details Button -->
+                                    <button type="button" class="btn btn-outline btn-sm" onclick='viewUserDetails({{ u | tojson | safe }})' title="View User Details">
+                                        <i class="fa-solid fa-circle-info"></i>
+                                    </button>
+
+                                    {% if u.role != 'admin' %}
+                                    <!-- Toggle Status Button -->
+                                    <button type="button" 
+                                            id="toggleBtn_{{ u.id }}"
+                                            class="btn btn-sm {% if u.status == 'active' %}btn-warning{% else %}btn-success{% endif %}" 
+                                            onclick="toggleUserStatus({{ u.id }}, '{{ 'blocked' if u.status == 'active' else 'active' }}')" 
+                                            title="{% if u.status == 'active' %}Block User{% else %}Activate User{% endif %}">
+                                        <i class="fa-solid {% if u.status == 'active' %}fa-ban{% else %}fa-check{% endif %}"></i>
+                                        <span>{% if u.status == 'active' %}Block{% else %}Activate{% endif %}</span>
+                                    </button>
+
+                                    <!-- Delete Button -->
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="deleteUser({{ u.id }}, '{{ u.name }}')" title="Delete User">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                                <i class="fa-solid fa-users" style="font-size: 2rem; opacity: 0.4; margin-bottom: 8px; display: block;"></i>
+                                No managed users found. Click <strong>Create New User</strong> to add your first user.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ================= CREATE USER MODAL ================= -->
+<div id="createUserModal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="saas-card" style="width: 100%; max-width: 500px; padding: 28px; position: relative;">
+        <button type="button" onclick="closeCreateUserModal()" style="position: absolute; right: 20px; top: 20px; background: transparent; border: none; font-size: 1.25rem; color: var(--text-muted); cursor: pointer;">
+            &times;
+        </button>
+
+        <h3 style="margin-bottom: 6px;"><i class="fa-solid fa-user-plus" style="color: var(--primary); margin-right: 8px;"></i> Create New User</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">The created user will automatically be assigned under your administration (<code>admin_id: {{ admin.id }}</code>).</p>
+
+        <div id="modalAlert" class="badge badge-danger" style="display: none; width: 100%; padding: 10px 14px; margin-bottom: 16px; text-transform: none; text-align: left; font-size: 0.85rem;"></div>
+
+        <form id="adminCreateUserForm" onsubmit="handleCreateUserSubmit(event)">
+            <div class="form-group">
+                <label class="form-label" for="newUserName"><i class="fa-solid fa-user"></i> Full Name</label>
+                <input type="text" id="newUserName" class="form-control" placeholder="Jane Doe" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="newUserEmail"><i class="fa-solid fa-envelope"></i> Email Address</label>
+                <input type="email" id="newUserEmail" class="form-control" placeholder="user@company.com" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="newUserPassword"><i class="fa-solid fa-lock"></i> Temporary Password</label>
+                <input type="password" id="newUserPassword" class="form-control" placeholder="Minimum 6 characters" minlength="6" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="newUserConfirmPassword"><i class="fa-solid fa-lock"></i> Confirm Password</label>
+                <input type="password" id="newUserConfirmPassword" class="form-control" placeholder="Repeat temporary password" minlength="6" required>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;">
+                <button type="button" class="btn btn-outline btn-md" onclick="closeCreateUserModal()">Cancel</button>
+                <button type="submit" id="createUserSubmitBtn" class="btn btn-primary btn-md">
+                    <i class="fa-solid fa-check"></i> Create User
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ================= USER DETAILS MODAL ================= -->
+<div id="userDetailsModal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="saas-card" style="width: 100%; max-width: 520px; padding: 28px; position: relative;">
+        <button type="button" onclick="closeUserDetailsModal()" style="position: absolute; right: 20px; top: 20px; background: transparent; border: none; font-size: 1.25rem; color: var(--text-muted); cursor: pointer;">
+            &times;
+        </button>
+
+        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--card-border);">
+            <div id="modalUserAvatar" class="user-avatar" style="width: 52px; height: 52px; font-size: 1.3rem;">—</div>
+            <div>
+                <h3 id="modalUserName" style="margin: 0 0 4px 0;">Select a user</h3>
+                <div id="modalUserEmail" style="color: var(--text-muted); font-size: 0.85rem;">—</div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px;">
+            <div style="padding: 12px; background: var(--background-alt); border-radius: var(--radius-sm);">
+                <small style="color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 700;">Account Status</small>
+                <div id="modalUserStatus" style="font-weight: 600; margin-top: 4px;">—</div>
+            </div>
+            <div style="padding: 12px; background: var(--background-alt); border-radius: var(--radius-sm);">
+                <small style="color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 700;">Role</small>
+                <div id="modalUserRole" style="font-weight: 600; margin-top: 4px;">—</div>
+            </div>
+            <div style="padding: 12px; background: var(--background-alt); border-radius: var(--radius-sm);">
+                <small style="color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 700;">Uploaded Documents</small>
+                <div id="modalUserDocs" style="font-weight: 600; margin-top: 4px; color: var(--primary);">—</div>
+            </div>
+            <div style="padding: 12px; background: var(--background-alt); border-radius: var(--radius-sm);">
+                <small style="color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 700;">Last Activity</small>
+                <div id="modalUserLastLogin" style="font-weight: 600; margin-top: 4px; font-size: 0.85rem;">—</div>
+            </div>
+            <div style="padding: 12px; background: var(--background-alt); border-radius: var(--radius-sm); grid-column: span 2;">
+                <small style="color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 700;">Member Since</small>
+                <div id="modalUserCreated" style="font-weight: 600; margin-top: 4px; font-size: 0.85rem;">N/A</div>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end;">
+            <button type="button" class="btn btn-primary btn-md" onclick="closeUserDetailsModal()">Close</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filterUsersClient() {
+        const query = (document.getElementById("userSearchInput").value || "").toLowerCase().trim();
+        const status = document.getElementById("userStatusFilter").value;
+        const rows = document.querySelectorAll("#adminUsersTable tbody tr[data-name]");
+
+        rows.forEach(row => {
+            const name = row.getAttribute("data-name") || "";
+            const email = row.getAttribute("data-email") || "";
+            const rowStatus = row.getAttribute("data-status") || "";
+
+            const matchesQuery = !query || name.includes(query) || email.includes(query);
+            const matchesStatus = status === "ALL" || rowStatus === status;
+
+            row.style.display = (matchesQuery && matchesStatus) ? "" : "none";
+        });
+    }
+
+    function viewUserDetails(user) {
+        if (!user) return;
+        document.getElementById("modalUserName").textContent = user.name || "User";
+        document.getElementById("modalUserEmail").textContent = user.email || "";
+        document.getElementById("modalUserAvatar").textContent = (user.name ? user.name[0] : 'U').toUpperCase();
+        
+        const statusEl = document.getElementById("modalUserStatus");
+        if (user.status === "active") {
+            statusEl.innerHTML = '<span class="badge badge-success"><i class="fa-solid fa-check"></i> Active</span>';
+        } else {
+            statusEl.innerHTML = '<span class="badge badge-danger"><i class="fa-solid fa-ban"></i> Blocked</span>';
+        }
+
+        document.getElementById("modalUserRole").textContent = user.role === "admin" ? "Administrator" : "Standard User";
+        document.getElementById("modalUserDocs").textContent = `${user.document_count || 0} Documents Uploaded`;
+        document.getElementById("modalUserLastLogin").textContent = user.last_login || "Never logged in";
+        document.getElementById("modalUserCreated").textContent = user.created_at || "N/A";
+
+        document.getElementById("userDetailsModal").style.display = "flex";
+    }
+
+    function closeUserDetailsModal() {
+        document.getElementById("userDetailsModal").style.display = "none";
+    }
+
+    function openCreateUserModal() {
+        document.getElementById("createUserModal").style.display = "flex";
+        document.getElementById("modalAlert").style.display = "none";
+        document.getElementById("adminCreateUserForm").reset();
+    }
+
+    function closeCreateUserModal() {
+        document.getElementById("createUserModal").style.display = "none";
+    }
+
+    async function handleCreateUserSubmit(event) {
+        event.preventDefault();
+        const name = document.getElementById("newUserName").value.trim();
+        const email = document.getElementById("newUserEmail").value.trim();
+        const password = document.getElementById("newUserPassword").value;
+        const confirm_password = document.getElementById("newUserConfirmPassword").value;
+        const submitBtn = document.getElementById("createUserSubmitBtn");
+        const alertBox = document.getElementById("modalAlert");
+
+        if (password !== confirm_password) {
+            alertBox.textContent = "Passwords do not match.";
+            alertBox.style.display = "block";
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Creating...';
+
+        try {
+            const res = await fetch("/api/admin/users", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, email, password, confirm_password })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                showToast(`User ${data.user.name} created successfully!`, "success");
+                closeCreateUserModal();
+                setTimeout(() => window.location.reload(), 600);
+            } else {
+                alertBox.textContent = data.message || "Failed to create user.";
+                alertBox.style.display = "block";
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> Create User';
+            }
+        } catch (e) {
+            alertBox.textContent = "Network error while creating user.";
+            alertBox.style.display = "block";
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> Create User';
+        }
+    }
+
+    async function toggleUserStatus(userId, targetStatus) {
+        const actionLabel = targetStatus === "active" ? "activate" : "block";
+        if (!confirm(`Are you sure you want to ${actionLabel} this user?`)) return;
+
+        try {
+            const res = await fetch(`/api/admin/users/${userId}/status`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: targetStatus })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(data.message, "success");
+                setTimeout(() => window.location.reload(), 400);
+            } else {
+                showToast(data.message || "Failed to update user status.", "error");
+            }
+        } catch (e) {
+            showToast("Network error updating status.", "error");
+        }
+    }
+
+    async function deleteUser(userId, userName) {
+        if (!confirm(`Are you sure you want to permanently delete user "${userName}"? This action cannot be undone.`)) return;
+
+        try {
+            const res = await fetch(`/api/admin/users/${userId}`, {
+                method: "DELETE"
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(data.message, "info");
+                const row = document.getElementById(`userRow_${userId}`);
+                if (row) row.remove();
+            } else {
+                showToast(data.message || "Failed to delete user.", "error");
+            }
+        } catch (e) {
+            showToast("Network error deleting user.", "error");
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI Document Intelligence Platform{% endblock %}</title>
+
+    <!-- Google Fonts & Font Awesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
+    <script>
+        (function () {
+            try {
+                var theme = localStorage.getItem('ai_doc_theme') || 'light';
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {}
+        })();
+    </script>
+    {% block extra_css %}{% endblock %}
+</head>
+<body data-theme="light">
+    <!-- Interactive Background Canvas -->
+    <canvas id="physics-canvas"></canvas>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- HEADER / NAVIGATION BAR -->
+    <header class="navbar-header">
+        <nav class="navbar container">
+            <!-- Left: Logo -->
+            <a href="{{ url_for('home') }}" class="nav-logo">
+                <div class="logo-icon"><i class="fa-solid fa-brain"></i></div>
+                <span>AI <span class="gradient-text">Doc Intelligence</span></span>
+            </a>
+
+            <!-- Center: Horizontally Aligned Navigation Links -->
+            <div class="nav-menu">
+                <ul class="nav-list">
+                    <li><a href="{{ url_for('home') }}"           class="nav-link">Home</a></li>
+                    <li><a href="{{ url_for('upload_page') }}"    class="nav-link">Upload</a></li>
+                    <li><a href="{{ url_for('results_page') }}"   class="nav-link">Results</a></li>
+                    <li><a href="{{ url_for('dashboard_page') }}" class="nav-link">Dashboard</a></li>
+                    <li><a href="{{ url_for('about_page') }}"     class="nav-link">About</a></li>
+                </ul>
+            </div>
+
+            <!-- Right: Auth Controls & Profile -->
+            <div class="nav-controls">
+                <!-- Theme Toggle Button -->
+                <button type="button" class="theme-toggle" id="themeToggle" title="Toggle Light/Dark Theme" aria-label="Toggle Light/Dark Theme">
+                    <i class="fa-solid fa-moon moon-icon"></i>
+                    <i class="fa-solid fa-sun sun-icon"></i>
+                </button>
+
+                <!-- Notification Bell -->
+                <div class="nav-notif-wrap" id="navNotifWrap">
+                    <button type="button" class="nav-notif-btn" id="navNotifBtn" aria-label="Notifications" title="Notifications">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="nav-notif-badge" id="navNotifBadge" style="display:none;">0</span>
+                    </button>
+                    <div class="nav-notif-dropdown" id="navNotifDropdown">
+                        <div class="notif-header">
+                            <span><i class="fa-solid fa-bell"></i> Notifications</span>
+                            <button id="notifMarkAllRead" class="notif-clear-btn">Mark all read</button>
+                        </div>
+                        <div id="notifList" class="notif-list">
+                            <div class="notif-empty"><i class="fa-solid fa-inbox"></i><br>No new notifications</div>
+                        </div>
+                        <div class="notif-footer">
+                            <a href="{{ url_for('history_page') }}">View All Documents →</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dynamic Auth Button / User Profile Dropdown -->
+                <div id="navAuthContainer">
+                    <a href="{{ url_for('auth_page') }}" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-right-to-bracket"></i> Sign In
+                    </a>
+                </div>
+
+                <!-- Mobile Hamburger Button -->
+                <button class="mobile-nav-toggle" id="mobileNavToggle" title="Open Navigation Menu">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- MOBILE NAVIGATION DRAWER -->
+    <div class="mobile-drawer-backdrop" id="mobileBackdrop"></div>
+    <div class="mobile-drawer" id="mobileDrawer">
+        <div>
+            <div class="mobile-drawer-header">
+                <a href="{{ url_for('home') }}" class="nav-logo" style="font-size: 1.1rem;">
+                    <div class="logo-icon" style="width:32px; height:32px; font-size:0.95rem;"><i class="fa-solid fa-brain"></i></div>
+                    <span>AI <span class="gradient-text">Doc Intelligence</span></span>
+                </a>
+                <button id="mobileDrawerClose" style="background:transparent; border:none; font-size:1.4rem; color:var(--text-main); cursor:pointer;">
+                    &times;
+                </button>
+            </div>
+
+            <ul class="mobile-nav-list">
+                <li><a href="{{ url_for('home') }}"           class="nav-link"><i class="fa-solid fa-house" style="width:18px;"></i> Home</a></li>
+                <li><a href="{{ url_for('upload_page') }}"    class="nav-link"><i class="fa-solid fa-cloud-arrow-up" style="width:18px;"></i> Upload</a></li>
+                <li><a href="{{ url_for('results_page') }}"   class="nav-link"><i class="fa-solid fa-square-poll-vertical" style="width:18px;"></i> Results</a></li>
+                <li><a href="{{ url_for('dashboard_page') }}" class="nav-link"><i class="fa-solid fa-gauge" style="width:18px;"></i> Dashboard</a></li>
+                <li><a href="{{ url_for('history_page') }}"   class="nav-link"><i class="fa-solid fa-clock-rotate-left" style="width:18px;"></i> History</a></li>
+                <li><a href="{{ url_for('about_page') }}"     class="nav-link"><i class="fa-solid fa-circle-info" style="width:18px;"></i> About</a></li>
+                <li><a href="/settings"                       class="nav-link"><i class="fa-solid fa-gear" style="width:18px;"></i> Settings</a></li>
+            </ul>
+        </div>
+
+        <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--card-border);">
+            <div id="mobileAuthContainer" style="margin-bottom: 14px;"></div>
+            <button type="button" class="btn btn-outline btn-sm" id="mobileThemeToggle" style="width: 100%;">
+                <i class="fa-solid fa-circle-half-stroke"></i> Toggle Theme
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- SHARED FOOTER -->
+    <footer class="footer reveal">
+        <div class="container footer-content">
+            <div class="footer-brand">
+                <a href="{{ url_for('home') }}" class="nav-logo">
+                    <div class="logo-icon"><i class="fa-solid fa-brain"></i></div>
+                    <span>AI Doc Intelligence</span>
+                </a>
+                <p style="font-size:0.875rem; margin-top:10px; max-width:420px;">Transform raw documents into structured intelligence with AI-powered classification, extraction, summarization, and analysis.</p>
+            </div>
+            <div class="footer-links" style="display:flex; gap:24px; font-size:0.9rem;">
+                <a href="{{ url_for('home') }}">Home</a>
+                <a href="{{ url_for('upload_page') }}">Upload</a>
+                <a href="{{ url_for('results_page') }}">Results</a>
+                <a href="{{ url_for('dashboard_page') }}">Dashboard</a>
+                <a href="{{ url_for('about_page') }}">About</a>
+            </div>
+        </div>
+        <div class="footer-bottom container">
+            <p>&copy; 2026 AI Document Intelligence Platform. Production SaaS Architecture.</p>
+        </div>
+    </footer>
+
+    <!-- Main JavaScript System -->
+    <script>
+        window.APP_CURRENT_USER = {{ current_user | tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/animations.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+
+    <!-- Notification Bell Script -->
+    <script>
+    (function () {
+        'use strict';
+        const NOTIF_KEY = 'ai_doc_notif_read';
+
+        function getReadIds() {
+            try { return JSON.parse(localStorage.getItem(NOTIF_KEY) || '[]'); } catch { return []; }
+        }
+        function saveReadIds(ids) {
+            try { localStorage.setItem(NOTIF_KEY, JSON.stringify(ids)); } catch {}
+        }
+
+        function timeAgo(dateStr) {
+            if (!dateStr) return '';
+            const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
+            if (diff < 60) return 'just now';
+            if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+            if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+            return Math.floor(diff / 86400) + 'd ago';
+        }
+
+        function statusIcon(status) {
+            const s = (status || '').toLowerCase();
+            if (s === 'completed') return '<i class="fa-solid fa-circle-check notif-icon-ok"></i>';
+            if (s === 'failed')    return '<i class="fa-solid fa-circle-xmark notif-icon-err"></i>';
+            return '<i class="fa-solid fa-spinner fa-spin notif-icon-proc"></i>';
+        }
+
+        function renderNotifications(jobs) {
+            const list   = document.getElementById('notifList');
+            const badge  = document.getElementById('navNotifBadge');
+            if (!list || !badge) return;
+
+            const readIds = getReadIds();
+
+            if (!jobs || jobs.length === 0) {
+                list.innerHTML = '<div class="notif-empty"><i class="fa-solid fa-inbox"></i><br>No notifications yet</div>';
+                badge.style.display = 'none';
+                return;
+            }
+
+            let unread = 0;
+            const items = jobs.map(function (j) {
+                const id     = String(j.job_id || j.id || '');
+                const isRead = readIds.includes(id);
+                if (!isRead) unread++;
+                const fname  = j.filename || j.original_filename || 'Document';
+                const status = j.status || 'Processing';
+                const time   = timeAgo(j.created_at || j.upload_time);
+                const conf   = j.confidence_score ? (' · ' + j.confidence_score) : '';
+                return `<div class="notif-item${isRead ? ' read' : ''}" data-id="${id}">
+                    <div class="notif-item-icon">${statusIcon(status)}</div>
+                    <div class="notif-item-body">
+                        <div class="notif-item-title">${fname}</div>
+                        <div class="notif-item-meta">${status}${conf} <span class="notif-time">${time}</span></div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            list.innerHTML = items;
+
+            if (unread > 0) {
+                badge.textContent = unread > 9 ? '9+' : unread;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function loadNotifications() {
+            fetch('/api/dashboard/recent-documents?limit=10')
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (data) {
+                    if (data && Array.isArray(data.documents)) {
+                        renderNotifications(data.documents);
+                    }
+                })
+                .catch(function () {});
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const btn      = document.getElementById('navNotifBtn');
+            const dropdown = document.getElementById('navNotifDropdown');
+            const markBtn  = document.getElementById('notifMarkAllRead');
+            if (!btn || !dropdown) return;
+
+            // Load on page ready
+            loadNotifications();
+
+            // Toggle open/close
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                const isOpen = dropdown.classList.contains('open');
+                dropdown.classList.toggle('open', !isOpen);
+                btn.classList.toggle('active', !isOpen);
+            });
+
+            // Close on outside click
+            document.addEventListener('click', function (e) {
+                if (!document.getElementById('navNotifWrap').contains(e.target)) {
+                    dropdown.classList.remove('open');
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Mark all read
+            if (markBtn) {
+                markBtn.addEventListener('click', function () {
+                    const items = document.querySelectorAll('.notif-item[data-id]');
+                    const ids = Array.from(items).map(function (el) { return el.dataset.id; });
+                    saveReadIds(ids);
+                    items.forEach(function (el) { el.classList.add('read'); });
+                    const badge = document.getElementById('navNotifBadge');
+                    if (badge) badge.style.display = 'none';
+                });
+            }
+        });
+    })();
+    </script>
+</body>
+</html>

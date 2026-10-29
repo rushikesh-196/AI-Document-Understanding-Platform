@@ -1,0 +1,292 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Document Management — Admin Control Center{% endblock %}
+{% block header_title %}Document Intelligence &amp; Repository{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-detail-meta { display:grid; grid-template-columns:repeat(auto-fit,minmax(135px,1fr)); gap:9px; margin-bottom:18px; }
+    .admin-detail-stat { background:var(--background-alt); border:1px solid var(--card-border); border-radius:10px; padding:10px 12px; min-width:0; }
+    .admin-detail-stat small { display:block; color:var(--text-muted); font-size:.68rem; text-transform:uppercase; margin-bottom:4px; }
+    .admin-detail-stat strong { display:block; color:var(--text-main); font-size:.8rem; overflow-wrap:anywhere; }
+    .admin-detail-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+    .admin-detail-grid h3 { font-size:.95rem; margin:0 0 9px; }
+    .admin-detail-wide { grid-column:1/-1; }
+    .admin-document-preview { min-height:340px; height:48vh; background:var(--background-alt); border:1px solid var(--card-border); border-radius:10px; overflow:hidden; display:grid; place-items:center; color:var(--text-muted); text-align:center; padding:10px; }
+    .admin-document-preview iframe { width:100%; height:100%; border:0; background:#fff; }
+    .admin-data-preview { min-height:240px; max-height:48vh; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; background:var(--background-alt); border:1px solid var(--card-border); border-radius:10px; padding:14px; margin:0; color:var(--text-main); font: .78rem/1.5 var(--font-code,monospace); }
+    @media(max-width:760px){.admin-detail-grid{grid-template-columns:1fr}.admin-detail-wide{grid-column:auto}.admin-document-preview{height:36vh;min-height:240px}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1400px; margin: 0 auto;">
+
+    <!-- TOP HEADER -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+        <div>
+            <h1 style="font-size: 1.5rem; margin-bottom: 4px;">Document Repository</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0;">Access and inspect all documents uploaded and processed by your managed users.</p>
+        </div>
+        <a href="{{ url_for('upload_page') }}" class="btn btn-primary btn-md">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Upload New Document
+        </a>
+    </div>
+
+    <!-- FILTER & SEARCH BAR -->
+    <div class="saas-card" style="padding: 16px 20px; margin-bottom: 24px;">
+        <form method="GET" action="{{ url_for('admin.documents_page') }}" style="display: flex; gap: 14px; flex-wrap: wrap; align-items: center;">
+            <div style="flex: 1; min-width: 260px; position: relative;">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                <input type="text" name="q" value="{{ search or '' }}" class="form-control" placeholder="Search by filename, job ID, or user..." style="padding-left: 38px;">
+            </div>
+
+            <div style="width: 200px;">
+                <select name="type" class="form-control" onchange="this.form.submit()">
+                    <option value="ALL" {% if selected_type == 'ALL' %}selected{% endif %}>All Document Types</option>
+                    {% for value in filter_options.document_types %}
+                    <option value="{{ value }}" {% if selected_type == value %}selected{% endif %}>{{ value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="width: 180px;">
+                <select name="status" class="form-control" onchange="this.form.submit()">
+                    <option value="ALL" {% if selected_status == 'ALL' %}selected{% endif %}>All Statuses</option>
+                    {% for value in filter_options.statuses %}
+                    <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <label style="display: grid; gap: 4px; color: var(--text-muted); font-size: .72rem;">From
+                <input type="date" name="date_from" value="{{ date_from }}" class="form-control">
+            </label>
+            <label style="display: grid; gap: 4px; color: var(--text-muted); font-size: .72rem;">To
+                <input type="date" name="date_to" value="{{ date_to }}" class="form-control">
+            </label>
+
+            <button type="submit" class="btn btn-outline btn-md">Filter</button>
+            {% if search or (selected_type and selected_type != 'ALL') or (selected_status and selected_status != 'ALL') or date_from or date_to %}
+            <a href="{{ url_for('admin.documents_page') }}" class="btn btn-outline btn-md" title="Reset filters">Reset</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- DOCUMENTS TABLE -->
+    <div class="saas-card" style="padding: 24px;">
+        <div class="table-responsive">
+            <table class="saas-table">
+                <thead>
+                    <tr>
+                        <th>Document &amp; Job ID</th>
+                        <th>Uploaded By</th>
+                        <th>Format</th>
+                        <th>Classification</th>
+                        <th>OCR Status</th>
+                        <th>Extraction</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                        <th>Upload Date</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if documents %}
+                        {% for doc in documents %}
+                        <tr id="docRow_{{ doc.job_id }}">
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <i class="fa-solid {% if doc.file_type == 'PDF' %}fa-file-pdf{% else %}fa-file-image{% endif %}" style="color: var(--primary); font-size: 1.2rem;"></i>
+                                    <div>
+                                        <strong style="color: var(--text-main); font-size: 0.9rem;">{{ doc.filename }}</strong>
+                                        <div style="color: var(--text-muted); font-family: var(--font-code); font-size: 0.75rem;">{{ doc.job_id }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <strong style="font-size: 0.85rem; color: var(--text-main);">{{ doc.user_name or 'Unknown owner' }}</strong>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ doc.user_email or '' }}</div>
+                            </td>
+                            <td>
+                                <span class="badge" style="background: var(--background-alt); color: var(--text-main); font-family: var(--font-code); font-size: 0.75rem;">
+                                    {{ doc.file_type }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge badge-primary">{{ doc.document_type or 'Unclassified' }}</span>
+                            </td>
+                            <td>
+                                {% if doc.ocr_status == 'Completed' %}
+                                    <span class="badge badge-success"><i class="fa-solid fa-check"></i> {{ doc.confidence_score }}</span>
+                                {% elif doc.ocr_status == 'Failed' %}
+                                    <span class="badge badge-danger"><i class="fa-solid fa-xmark"></i> Failed</span>
+                                {% elif not doc.ocr_status %}
+                                    <span class="badge">Not recorded</span>
+                                {% else %}
+                                    <span class="badge badge-warning">{{ doc.ocr_status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if doc.extraction_status == 'Completed' %}
+                                    <span class="badge badge-success"><i class="fa-solid fa-check"></i> Ready</span>
+                                {% elif doc.extraction_status == 'Failed' %}
+                                    <span class="badge badge-danger"><i class="fa-solid fa-xmark"></i> Error</span>
+                                {% elif not doc.extraction_status %}
+                                    <span class="badge">Not recorded</span>
+                                {% else %}
+                                    <span class="badge badge-warning">{{ doc.extraction_status }}</span>
+                                {% endif %}
+                            </td>
+                            <td style="font-size: 0.82rem; color: var(--text-muted); font-family: var(--font-code);">
+                                {{ doc.processing_time or '—' }}
+                            </td>
+                            <td>
+                                {% if doc.status == 'Completed' %}
+                                    <span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> Completed</span>
+                                {% elif doc.status == 'Failed' %}
+                                    <span class="badge badge-danger" title="{{ doc.error_message }}"><i class="fa-solid fa-circle-xmark"></i> Failed</span>
+                                {% else %}
+                                    <span class="badge badge-warning"><i class="fa-solid fa-circle-notch fa-spin"></i> {{ doc.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td style="font-size: 0.82rem; color: var(--text-muted);">{{ doc.created_at }}</td>
+                            <td style="text-align: right;">
+                                <div style="display: inline-flex; gap: 6px;">
+                                    <button type="button" class="btn btn-outline btn-sm" onclick="openDocumentDetails('{{ doc.job_id }}')" title="View OCR and extraction details">
+                                        <i class="fa-solid fa-eye"></i> View
+                                    </button>
+                                    <a href="/api/export/json/{{ doc.job_id }}" class="btn btn-outline btn-sm" title="Download JSON" download>
+                                        <i class="fa-solid fa-code"></i>
+                                    </a>
+                                    <a href="/api/export/csv/{{ doc.job_id }}" class="btn btn-outline btn-sm" title="Download CSV" download>
+                                        <i class="fa-solid fa-table"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="deleteDocument('{{ doc.job_id }}', '{{ doc.filename }}')" title="Delete Document">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                                <i class="fa-solid fa-folder-open" style="font-size: 2.2rem; opacity: 0.4; margin-bottom: 10px; display: block;"></i>
+                                No documents match your filter criteria.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- PAGINATION -->
+        {% if total_pages > 1 %}
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--card-border);">
+            <small style="color: var(--text-muted);">Showing page {{ page }} of {{ total_pages }} (Total: {{ total }} docs)</small>
+            <div style="display: flex; gap: 8px;">
+                {% if page > 1 %}
+                <a href="{{ url_for('admin.documents_page', page=page-1, q=search, type=selected_type, status=selected_status, date_from=date_from, date_to=date_to) }}" class="btn btn-outline btn-sm">
+                    <i class="fa-solid fa-chevron-left"></i> Previous
+                </a>
+                {% endif %}
+                {% if page < total_pages %}
+                <a href="{{ url_for('admin.documents_page', page=page+1, q=search, type=selected_type, status=selected_status, date_from=date_from, date_to=date_to) }}" class="btn btn-outline btn-sm">
+                    Next <i class="fa-solid fa-chevron-right"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div id="documentDetailModal" class="modal-backdrop" style="display:none; position:fixed; inset:0; z-index:1100; background:rgba(8,15,30,.72); padding:20px; overflow:auto; align-items:center; justify-content:center;">
+    <section class="saas-card" style="width:min(1100px,100%); max-height:92vh; overflow:auto; padding:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:18px;">
+            <div><h2 id="detailTitle" style="margin:0 0 4px">Document details</h2><div id="detailSubTitle" style="color:var(--text-muted)"></div></div>
+            <button type="button" class="btn btn-outline" onclick="closeDocumentDetails()" aria-label="Close details">Close</button>
+        </div>
+        <div id="detailMeta" class="admin-detail-meta"></div>
+        <div class="admin-detail-grid">
+            <div><h3>Original document</h3><div id="detailPreview" class="admin-document-preview">Preview is not available.</div></div>
+            <div><h3>Extracted data</h3><pre id="detailExtracted" class="admin-data-preview">No extracted data recorded.</pre></div>
+            <div class="admin-detail-wide"><h3>OCR text</h3><pre id="detailOcrText" class="admin-data-preview">No OCR text recorded.</pre></div>
+        </div>
+        <p id="detailError" style="color:var(--danger); margin:12px 0 0"></p>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function openDocumentDetails(jobId) {
+        const modal = document.getElementById('documentDetailModal');
+        const error = document.getElementById('detailError');
+        modal.style.display = 'flex';
+        error.textContent = '';
+        document.getElementById('detailTitle').textContent = 'Loading document…';
+        document.getElementById('detailSubTitle').textContent = jobId;
+        try {
+            const response = await fetch(`/api/admin/documents/${encodeURIComponent(jobId)}`, {cache: 'no-store'});
+            const payload = await response.json();
+            if (!response.ok || !payload.success) throw new Error(payload.message || 'Unable to load document.');
+            const doc = payload.document;
+            document.getElementById('detailTitle').textContent = doc.filename || 'Document';
+            document.getElementById('detailSubTitle').textContent = `${doc.user_name || 'Unknown owner'} · ${doc.created_at || 'Upload date unavailable'} · ${doc.job_id}`;
+            const fields = [
+                ['Status', doc.status], ['Document type', doc.document_type], ['OCR status', doc.ocr_status],
+                ['Extraction status', doc.extraction_status], ['Confidence', doc.confidence_score],
+                ['Processing time', doc.processing_time], ['Engine', doc.engine], ['Stage', doc.current_stage]
+            ];
+            const meta = document.getElementById('detailMeta');
+            meta.replaceChildren(...fields.map(([label,value]) => {
+                const item = document.createElement('div'); item.className = 'admin-detail-stat';
+                const name = document.createElement('small'); name.textContent = label;
+                const text = document.createElement('strong'); text.textContent = value || 'Not recorded';
+                item.append(name,text); return item;
+            }));
+            const preview = document.getElementById('detailPreview');
+            preview.replaceChildren();
+            if (doc.saved_file_name) {
+                const frame = document.createElement('iframe');
+                frame.src = `/api/admin/documents/${encodeURIComponent(jobId)}/preview`;
+                frame.title = 'Uploaded document preview';
+                preview.append(frame);
+            } else preview.textContent = 'Original file reference is not recorded.';
+            document.getElementById('detailExtracted').textContent = JSON.stringify({
+                summary: doc.summary, structured_data: doc.structured_data,
+                extracted_fields: doc.extracted_fields, tables: doc.tables, validation: doc.validation
+            }, null, 2);
+            document.getElementById('detailOcrText').textContent = doc.raw_text || doc.formatted_text || 'No OCR text recorded.';
+        } catch (e) { error.textContent = e.message; }
+    }
+    function closeDocumentDetails() {
+        const modal = document.getElementById('documentDetailModal');
+        modal.style.display = 'none';
+        const preview = document.getElementById('detailPreview');
+        preview.replaceChildren();
+    }
+
+    async function deleteDocument(jobId, filename) {
+        if (!confirm(`Are you sure you want to permanently delete document "${filename || jobId}"? This action removes all database records and extracted artifacts.`)) return;
+
+        try {
+            const res = await fetch(`/api/admin/documents/${jobId}`, {
+                method: "DELETE"
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast("Document record and artifacts deleted successfully.", "info");
+                const row = document.getElementById(`docRow_${jobId}`);
+                if (row) row.remove();
+            } else {
+                showToast(data.message || "Failed to delete document.", "error");
+            }
+        } catch (e) {
+            showToast("Network error while deleting document.", "error");
+        }
+    }
+</script>
+{% endblock %}
