@@ -88,27 +88,33 @@ The platform provides a streamlined document processing pipeline:
 
 ## 5. System Architecture
 
-`	ext
-User Browser / React SPA
-         |
-         v
-  [Web Tier Router]
-   |-- Flask Server (Port 5000) --> Jinja2 Server-Rendered UI + RBAC Admin
-   +-- FastAPI Server (Port 8000) --> Headless REST Endpoints (/api/v1)
-         |
-         v
-[Document Intelligence Pipeline]
-   |-- 1. Image Preprocessing (OpenCV deskewing & normalization)
-   |-- 2. OCR Engine (PaddleOCR bounding boxes + PyMuPDF fallback)
-   |-- 3. NLP & Pattern Extraction (spaCy NER + RegEx business fields)
-   +-- 4. Spatial Layout Reconstructor (Table synthesis & cell alignment)
-         |
-         v
-   [Data Layer]
-   |-- MySQL Database (Primary: users, document_jobs, activity_logs)
-   |-- SQLite Database (Automatic fallback: data/document_platform.db)
-   +-- File Storage (uploads/, extracted/, outputs/)
-`
+## 5. System Architecture
+
+```mermaid
+flowchart TD
+    A["User Browser / React SPA"] --> B["Web Tier Router"]
+
+    B --> C["Flask Server (Port 5000)"]
+    B --> D["FastAPI Server (Port 8000)"]
+
+    C --> E["Jinja2 Server-Rendered UI"]
+    C --> F["RBAC Admin"]
+
+    D --> G["Headless REST Endpoints (/api/v1)"]
+
+    G --> H["Document Intelligence Pipeline"]
+
+    H --> I["1. Image Preprocessing (OpenCV)"]
+    I --> J["2. OCR Engine (PaddleOCR / PyMuPDF)"]
+    J --> K["3. NLP & Pattern Extraction (spaCy NER / RegEx)"]
+    K --> L["4. Spatial Layout Reconstruction (Tables & Cell Alignment)"]
+
+    L --> M["Data Layer"]
+
+    M --> N["MySQL (Primary Database)"]
+    M --> O["SQLite (Automatic Fallback)"]
+    M --> P["File Storage (uploads/, extracted/, outputs/)"]
+```
 
 ---
 
